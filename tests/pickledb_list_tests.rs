@@ -222,6 +222,141 @@ fn add_to_non_existent_list() {
 }
 
 #[test]
+fn remove_list() {
+    set_test_rsc!("remove_list.db");
+
+    let mut db = PickleDb::new("remove_list.db", true);
+
+    // create some lists
+    db.lcreate("list1");
+    db.lcreate("list2");
+    db.lcreate("list3");
+    db.lcreate("list4");
+
+    // add values to lists
+    assert!(db.lextend("list1", &vec![1,2,3,4,5,6,7,8,9,10]));
+    assert!(db.lextend("list2", &vec!['a', 'b', 'c', 'd', 'e']));
+    assert!(db.lextend("list3", &vec![1.2, 1.3, 2.1, 3.1, 3.3, 7.889]));
+    assert!(db.lextend("list4", &vec!["aaa", "bbb", "ccc", "ddd", "eee"]));
+
+    // verify number of lists in file
+    {
+        let read_db = PickleDb::load("remove_list.db", false).unwrap();
+        assert_eq!(read_db.total_keys(), 4);
+    }
+
+    // remove list1 using rem
+    assert!(db.rem("list1"));
+
+    // verify number of lists
+    assert_eq!(db.total_keys(), 3);
+
+    // verify number of lists in file
+    {
+        let read_db = PickleDb::load("remove_list.db", false).unwrap();
+        assert_eq!(read_db.total_keys(), 3);
+    }
+
+
+    // remove list1 using lrem_list
+    assert_eq!(db.lrem_list("list3"), 6);
+
+    // verify number of lists
+    assert_eq!(db.total_keys(), 2);
+
+    // verify number of lists in file
+    {
+        let read_db = PickleDb::load("remove_list.db", false).unwrap();
+        assert_eq!(read_db.total_keys(), 2);
+    }
+}
+
+#[test]
+fn remove_values_from_list() {
+    set_test_rsc!("remove_values_from_list.db");
+
+    let mut db = PickleDb::new("remove_values_from_list.db", true);
+
+    // add a struct to list1
+    #[derive(Serialize, Deserialize, Debug)]
+    struct MySquare {
+        x: u32,
+    }
+
+    // create a list and add some values
+    db.lcreate("list1");
+    assert!(db.lextend("list1", &vec![1,2,3]));
+    assert!(db.ladd("list1", &String::from("hello")));
+    assert!(db.ladd("list1", &1.234));
+    assert!(db.lextend("list1", &vec![MySquare { x: 4 }, MySquare { x: 10 }]));
+
+    // list now looks like this:
+    // Indices: [0, 1, 2, 3,       4,     5,           6           ]
+    // Values:  [1, 2, 3, "hello", 1.234, MySquare(4), MySquare(10)]
+
+    // pop the floating number
+    assert_eq!(db.lpop::<f32>("list1", 4).unwrap(), 1.234);
+
+    // list now looks like this:
+    // Indices: [0, 1, 2, 3,       4,           5           ]
+    // Values:  [1, 2, 3, "hello", MySquare(4), MySquare(10)]
+
+    assert_eq!(db.lget::<MySquare>("list1", 4).unwrap().x, 4);
+    assert_eq!(db.lget::<String>("list1", 3).unwrap(), "hello");
+
+    // read this from file as well
+    {
+        let read_db = PickleDb::load("remove_values_from_list.db", false).unwrap();
+        assert_eq!(read_db.lget::<MySquare>("list1", 4).unwrap().x, 4);
+        assert_eq!(read_db.lget::<String>("list1", 3).unwrap(), "hello");
+    }
+
+    // pop the first element
+    assert_eq!(db.lpop::<i32>("list1", 0).unwrap(), 1);
+
+    // list now looks like this:
+    // Indices: [0, 1, 2,       3,           4           ]
+    // Values:  [2, 3, "hello", MySquare(4), MySquare(10)]
+
+    assert_eq!(db.lget::<MySquare>("list1", 4).unwrap().x, 10);
+    assert_eq!(db.lget::<i32>("list1", 1).unwrap(), 3);
+
+    // remove the "hello" string
+    assert!(db.lrem_value("list1", &String::from("hello")));
+
+    // list now looks like this:
+    // Indices: [0, 1, 2,           3           ]
+    // Values:  [2, 3, MySquare(4), MySquare(10)]
+
+    assert_eq!(db.lget::<MySquare>("list1", 3).unwrap().x, 10);
+    assert_eq!(db.lget::<i32>("list1", 1).unwrap(), 3);
+
+    // read this from file as well
+    {
+        let read_db = PickleDb::load("remove_values_from_list.db", false).unwrap();
+        assert_eq!(read_db.lget::<MySquare>("list1", 3).unwrap().x, 10);
+        assert_eq!(read_db.lget::<i32>("list1", 1).unwrap(), 3);
+    }
+
+    // remove the MySquare(4)
+    assert!(db.lrem_value("list1", &MySquare { x: 4 }));
+
+    // list now looks like this:
+    // Indices: [0, 1, 2           ]
+    // Values:  [2, 3, MySquare(10)]
+
+    assert_eq!(db.lget::<MySquare>("list1", 2).unwrap().x, 10);
+    assert_eq!(db.lget::<i32>("list1", 0).unwrap(), 2);
+
+    // read this from file as well
+    {
+        let read_db = PickleDb::load("remove_values_from_list.db", false).unwrap();
+        assert_eq!(read_db.lget::<MySquare>("list1", 2).unwrap().x, 10);
+        assert_eq!(read_db.lget::<i32>("list1", 0).unwrap(), 2);
+    }
+}
+
+#[test]
 fn list_with_special_strings() {
     set_test_rsc!("list_with_special_strings.db");
 

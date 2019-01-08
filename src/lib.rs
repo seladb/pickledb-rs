@@ -98,6 +98,10 @@ impl PickleDb {
         self.dumpdb();
     }
 
+    pub fn lexists(&self, name: &str) -> bool {
+        self.list_map.get(name).is_some()
+    }
+
     pub fn ladd<V>(&mut self, name: &str, value: &V) -> bool
         where
             V: Serialize
@@ -175,7 +179,7 @@ impl PickleDb {
         }
     }
 
-    pub fn lrem_value<V>(&mut self, name: &str, value: V) -> bool 
+    pub fn lrem_value<V>(&mut self, name: &str, value: &V) -> bool 
         where
             V: Serialize
     {
@@ -191,7 +195,6 @@ impl PickleDb {
 
                     None => false,
                 }
-                
             },
 
             None => false,
