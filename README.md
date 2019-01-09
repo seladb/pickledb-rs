@@ -7,7 +7,7 @@ PickleDB-rs is a lightweight and simple key-value store. It is a Rust version fo
 
 ## PickleDB is fun and easy to use
 
-```
+```rust
 use pickledb::PickleDb;
 
 fn main() {
