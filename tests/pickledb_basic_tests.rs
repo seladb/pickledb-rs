@@ -181,6 +181,29 @@ fn set_load_get_auto_dump2() {
         let read_db = PickleDb::load("set_load_get_auto_dump2.db", false).unwrap();
         assert_eq!(read_db.get::<i32>("num2").unwrap(), num2);
     }
+
+    // set a different value for a given key
+    db.set("num", &101);
+
+    // read the new value
+    assert_eq!(db.get::<i32>("num").unwrap(), 101);
+    {
+        let read_db = PickleDb::load("set_load_get_auto_dump2.db", false).unwrap();
+        assert_eq!(read_db.get::<i32>("num").unwrap(), 101);
+    }
+
+    // set a different value of a different type for a given key
+    db.set("num", &vec![1,2,3]);
+
+    // read the new value
+    assert!(db.get::<i32>("num").is_none());
+    assert_eq!(db.get::<Vec<i32>>("num").unwrap(), vec![1,2,3]);
+    {
+        let read_db = PickleDb::load("set_load_get_auto_dump2.db", false).unwrap();
+        assert_eq!(read_db.get::<Vec<i32>>("num").unwrap(), vec![1,2,3]);
+    }
+
+
 }
 
 #[test]

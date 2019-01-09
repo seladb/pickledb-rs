@@ -11,7 +11,49 @@ extern crate serde_derive;
 
 #[test]
 fn lists_and_values() {
+    set_test_rsc!("lists_and_values.db");
 
+    let mut db = PickleDb::new("lists_and_values.db", true);
+
+    // set a few values
+    db.set("key1", &String::from("val1"));
+    db.set("key2", &1);
+    db.set("key3", &vec![1,2,3]);
+
+    // create a few lists and add values to them
+    db.lcreate("list1");
+    db.lextend("list1", &vec![1,2,3]);
+
+    db.lcreate("list2");
+    db.ladd("list2", &1.1);
+    db.ladd("list2", &String::from("some val"));
+
+    // read keys and lists
+    {
+        let read_db = PickleDb::load("lists_and_values.db", false).unwrap();
+        assert_eq!(read_db.get::<String>("key1").unwrap(), String::from("val1"));
+        assert_eq!(read_db.get::<i32>("key2").unwrap(), 1);
+        assert_eq!(read_db.get::<Vec<i32>>("key3").unwrap(), vec![1,2,3]);
+        assert_eq!(read_db.lget::<i32>("list1", 0).unwrap(), 1);
+        assert_eq!(read_db.lget::<i32>("list1", 2).unwrap(), 3);
+        assert_eq!(read_db.lget::<f32>("list2", 0).unwrap(), 1.1);
+        assert_eq!(read_db.lget::<String>("list2", 1).unwrap(), String::from("some val"));
+    }
+
+    // create key and list with the same name, make sure they override one another
+    db.set("key_or_list1", &1);
+    db.lcreate("key_or_list1");
+
+    assert!(db.exists("key_or_list1"));
+    assert!(db.get::<i32>("key_or_list1").is_none());
+    assert!(db.lexists("key_or_list1"));
+
+    // now set the key again and verify list is removed
+    db.set("key_or_list1", &2);
+
+    assert!(db.exists("key_or_list1"));
+    assert_eq!(db.get::<i32>("key_or_list1").unwrap(), 2);
+    assert!(!db.lexists("key_or_list1"));
 }
 
 

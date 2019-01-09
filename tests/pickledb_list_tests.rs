@@ -162,6 +162,48 @@ fn add_and_extend_lists() {
 }
 
 #[test]
+fn override_lists() {
+    set_test_rsc!("override_lists.db");
+
+    let mut db = PickleDb::new("override_lists.db", true);
+
+    // create a list and add some values to it
+    db.lcreate("list1");
+    assert!(db.lextend("list1", &vec!["aa", "bb", "cc"]));
+
+    // verify list len is 3
+    assert_eq!(db.llen("list1"), 3);
+
+    // override the list
+    db.lcreate("list1");
+
+    // verify list is now empty (override)
+    assert!(db.lexists("list1"));
+    assert_eq!(db.llen("list1"), 0);
+
+    // read the list from file and verify the same
+    {
+        let read_db = PickleDb::load("override_lists.db", false).unwrap();
+        assert!(read_db.lexists("list1"));
+        assert_eq!(read_db.llen("list1"), 0);
+    }
+
+    // add items to the override list
+    assert!(db.lextend("list1", &vec![1,2,3,4]));
+
+    // verify list contains the new data
+    assert!(db.lexists("list1"));
+    assert_eq!(db.llen("list1"), 4);
+
+    // read the list from file and verify the same
+    {
+        let read_db = PickleDb::load("override_lists.db", false).unwrap();
+        assert!(read_db.lexists("list1"));
+        assert_eq!(read_db.llen("list1"), 4);
+    }
+}
+
+#[test]
 fn lget_corner_cases() {
     set_test_rsc!("lget_corner_cases.db");
 

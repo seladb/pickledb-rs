@@ -42,6 +42,9 @@ impl PickleDb {
         where
             V: Serialize
     {
+        if self.list_map.contains_key(key) {
+            self.list_map.remove(key);
+        }
         self.map.insert(String::from(key), serde_json::to_string(value).unwrap());
         self.dumpdb();
     }
@@ -94,6 +97,9 @@ impl PickleDb {
 
     pub fn lcreate(&mut self, name: &str) {
         let new_list: Vec<String> = Vec::new();
+        if self.map.contains_key(name) {
+            self.map.remove(name);
+        }
         self.list_map.insert(String::from(name), new_list);
         self.dumpdb();
     }
