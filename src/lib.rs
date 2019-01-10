@@ -1,9 +1,15 @@
+//! Crate documentation placeholder
+//! 
+//! 
+//! 
+//! 
 use std::io::Error;
 use std::collections::HashMap;
 use std::fs;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
 
+/// A struct that represents a PickleDB object
 pub struct PickleDb {
     map: HashMap<String, String>, 
     list_map: HashMap<String, Vec<String>>,
