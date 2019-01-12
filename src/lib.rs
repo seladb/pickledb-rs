@@ -5,28 +5,35 @@
 //! 
 use std::io::Error;
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 use std::fs;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
 
+pub enum PickleDbDumpPolicy {
+    NeverDump,
+    AutoDump,
+    DumpUponRequest,
+    PeriodicDump(Duration),
+}
 /// A struct that represents a PickleDB object
 pub struct PickleDb {
     map: HashMap<String, String>, 
     list_map: HashMap<String, Vec<String>>,
     db_file_path: String,
-    auto_dump: bool,
+    dump_policy: PickleDbDumpPolicy,
+    last_dump: Instant
 }
 
 impl PickleDb {
 
-    /// Constructs a new `PickleDB`.
+    /// Constructs a new `PickleDB` instance.
     /// 
     /// # Arguments
     /// 
     /// * `location` - a path where the DB will be stored
-    /// * `auto_dump` - a boolean that indicates whether or not each change should automatically
-    ///   be saved to the file. If the value is false, nothing will be saved automatically and the
-    ///   user should actively call the `dump()` method
+    /// * `dump_policy` - an enum value that sets the policy of dumping DB changes into the file. Please see
+    ///    [PickleDB::load()](#method.load) to understand the different policy options
     /// 
     /// # Examples
     /// 
@@ -35,8 +42,13 @@ impl PickleDb {
     /// 
     /// let mut db = PickleDB::new("example.db", false);
     /// ```
-    pub fn new(location: &str, auto_dump: bool) -> PickleDb {
-        PickleDb { map: HashMap::new(), list_map: HashMap::new(), db_file_path: String::from(location), auto_dump: auto_dump }
+    pub fn new(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
+        PickleDb { 
+            map: HashMap::new(), 
+            list_map: HashMap::new(), 
+            db_file_path: String::from(location), 
+            dump_policy: dump_policy,
+            last_dump: Instant::now() }
     }
 
     /// Load a DB from a file.
@@ -46,22 +58,64 @@ impl PickleDb {
     /// 
     /// # Arguments
     /// 
-    /// * `location` - a path where the DB will be stored
-    /// * `auto_dump` - a boolean that indicates whether or not each change should automatically
-    ///   be saved to the file. If the value is false, nothing will be saved automatically and the
-    ///   user should actively call the `dump()` method
+    /// * `location` - a path where the DB is loaded from
+    /// * `dump_policy` - an enum value that sets the policy of dumping DB changes into the file. 
+    ///   The user can choose between the following options:
+    ///   * [PickleDbDumpPolicy::NeverDump](enum.PickleDbDumpPolicy.html#variant.NeverDump) - never dump any change,
+    ///     file will always remain read-only. When choosing this policy even calling to [dump()](#method.dump) won't dump the data.
+    ///     Choosing this option is the same like calling [PickleDB::load_read_only()](#method.load_read_only)
+    ///   * [PickleDbDumpPolicy::AutoDump](enum.PickleDbDumpPolicy.html#variant.AutoDump) - every change will be dumped
+    ///     immeidately and automatically to the file
+    ///   * [PickleDbDumpPolicy::DumpUponRequest](enum.PickleDbDumpPolicy.html#variant.DumpUponRequest) - data won't be dumped
+    ///     automatically, the user has to call [dump()](#method.dump) to dump the data
+    ///   * [PickleDbDumpPolicy::PeriodicDump(Duration)](enum.PickleDbDumpPolicy.html#variant.PeriodicDump) - changes will be
+    ///     dumped to the file periodically, no sooner than the Duration provided by the user. The way this mechanism works is
+    ///     as following: each time there is a DB change the last DB dump time is checked. If the time that has passed
+    ///     since the last dump is higher than Duration, changes will be dumped, otherwise changes will not be dumped.    
     /// 
     /// # Examples
     /// 
     /// ```rust,ignore
     /// use pickledb::PickleDb;
     /// 
-    /// let db = PickleDB::load("example.db", true);
+    /// let db = PickleDB::load("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
-    pub fn load(location: &str, auto_dump: bool) -> Result<PickleDb, Error> {
+    pub fn load(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
         let contents = fs::read_to_string(location)?;
         let map_from_file: (_,_) = serde_json::from_str(&contents)?;
-        Ok(PickleDb { map: map_from_file.0, list_map: map_from_file.1, db_file_path: String::from(location), auto_dump: auto_dump })
+        Ok(PickleDb { 
+            map: map_from_file.0, 
+            list_map: map_from_file.1, 
+            db_file_path: String::from(location), 
+            dump_policy: dump_policy,
+            last_dump: Instant::now()
+            })
+    }
+
+    /// Load a DB from a file in read-only mode.
+    ///
+    /// This method is similar to the [PickleDB::load()](#method.load) method with the only difference
+    /// that the file is loaded from DB with a dump policy of 
+    /// [PickleDbDumpPolicy::NeverDump](enum.PickleDbDumpPolicy.html#variant.NeverDump), meaning
+    /// changes will not be saved to the file, even when calling [dump()](#method.dump)
+    /// 
+    /// # Arguments
+    /// 
+    /// * `location` - a path where the DB is loaded from
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust,ignore
+    /// use pickledb::PickleDb;
+    /// 
+    /// let readonly_db = PickleDB::load("example.db");
+    /// 
+    /// // nothing happens by calling this method
+    /// readonly_db.dump();
+    /// ```
+    /// 
+    pub fn load_read_only(location: &str) -> Result<PickleDb, Error> {
+        PickleDb::load(location, PickleDbDumpPolicy::NeverDump)
     }
 
     /// Dump the data to the file.
@@ -70,19 +124,37 @@ impl PickleDb {
     /// Otherwise the data is dumped to the file upon every change. This method returns `true` if
     /// dump is successful, false otherwise.
     /// 
-    pub fn dump(&self) -> bool {
+    pub fn dump(&mut self) -> bool {
+        if let PickleDbDumpPolicy::NeverDump = self.dump_policy {
+            return true
+        }
+
         match serde_json::to_string(&(&self.map, &self.list_map)) {
             Ok(db_as_json) => {
                 fs::write(&self.db_file_path, &db_as_json).expect("Unable to write file");
+                if let PickleDbDumpPolicy::PeriodicDump(_dur) = self.dump_policy {
+                    self.last_dump = Instant::now();
+                }
                 true
             }
             Err(_) => false,
         }
     }
 
-    fn dumpdb(&self) {
-        if self.auto_dump {
-            self.dump();
+    fn dumpdb(&mut self) {
+        match self.dump_policy {
+            PickleDbDumpPolicy::AutoDump => {
+                self.dump();
+            },
+            PickleDbDumpPolicy::PeriodicDump(duration) => {
+                let now = Instant::now();
+                if now.duration_since(self.last_dump) > duration {
+                    self.last_dump = Instant::now();
+                    self.dump();
+                }
+            },
+
+            _ => (),
         }
     }
 
@@ -551,6 +623,15 @@ impl PickleDb {
             },
 
             None => false,
+        }
+    }
+}
+
+impl Drop for PickleDb {
+    fn drop(&mut self) {
+        if let PickleDbDumpPolicy::NeverDump = self.dump_policy {
+        } else {
+            self.dump();
         }
     }
 }

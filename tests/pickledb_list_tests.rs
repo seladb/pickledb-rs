@@ -1,4 +1,4 @@
-use pickledb::PickleDb;
+use pickledb::{PickleDb,PickleDbDumpPolicy};
 
 mod common;
 
@@ -9,7 +9,7 @@ extern crate serde_derive;
 fn basic_lists() {
     set_test_rsc!("basic_lists.db");
 
-    let mut db = PickleDb::new("basic_lists.db", true);
+    let mut db = PickleDb::new("basic_lists.db", PickleDbDumpPolicy::AutoDump);
 
     db.lcreate("list1");
 
@@ -81,7 +81,7 @@ fn basic_lists() {
 
 
     // load the file as read only db
-    let read_db = PickleDb::load("basic_lists.db", false).unwrap();
+    let read_db = PickleDb::load("basic_lists.db", PickleDbDumpPolicy::NeverDump).unwrap();
 
     // verify lists length
     assert_eq!(read_db.llen("list1"), 5);
@@ -114,7 +114,7 @@ fn basic_lists() {
 fn add_and_extend_lists() {
     set_test_rsc!("add_and_extend_lists.db");
 
-    let mut db = PickleDb::new("add_and_extend_lists.db", true);
+    let mut db = PickleDb::new("add_and_extend_lists.db", PickleDbDumpPolicy::AutoDump);
 
     // create 3 lists
     db.lcreate("list1");
@@ -151,7 +151,7 @@ fn add_and_extend_lists() {
     }
 
     // read db from file
-    let read_db = PickleDb::load("add_and_extend_lists.db", false).unwrap();
+    let read_db = PickleDb::load("add_and_extend_lists.db", PickleDbDumpPolicy::NeverDump).unwrap();
 
     // check all values in all lists
     for x in 0..5 {
@@ -165,7 +165,7 @@ fn add_and_extend_lists() {
 fn override_lists() {
     set_test_rsc!("override_lists.db");
 
-    let mut db = PickleDb::new("override_lists.db", true);
+    let mut db = PickleDb::new("override_lists.db", PickleDbDumpPolicy::AutoDump);
 
     // create a list and add some values to it
     db.lcreate("list1");
@@ -183,7 +183,7 @@ fn override_lists() {
 
     // read the list from file and verify the same
     {
-        let read_db = PickleDb::load("override_lists.db", false).unwrap();
+        let read_db = PickleDb::load("override_lists.db", PickleDbDumpPolicy::NeverDump).unwrap();
         assert!(read_db.lexists("list1"));
         assert_eq!(read_db.llen("list1"), 0);
     }
@@ -197,7 +197,7 @@ fn override_lists() {
 
     // read the list from file and verify the same
     {
-        let read_db = PickleDb::load("override_lists.db", false).unwrap();
+        let read_db = PickleDb::load("override_lists.db", PickleDbDumpPolicy::NeverDump).unwrap();
         assert!(read_db.lexists("list1"));
         assert_eq!(read_db.llen("list1"), 4);
     }
@@ -207,7 +207,7 @@ fn override_lists() {
 fn lget_corner_cases() {
     set_test_rsc!("lget_corner_cases.db");
 
-    let mut db = PickleDb::new("lget_corner_cases.db", false);
+    let mut db = PickleDb::new("lget_corner_cases.db", PickleDbDumpPolicy::DumpUponRequest);
 
     // create a list and add some values
     db.lcreate("list1");
@@ -235,7 +235,7 @@ fn lget_corner_cases() {
 fn add_to_non_existent_list() {
     set_test_rsc!("add_to_non_existent_list.db");
 
-    let mut db = PickleDb::new("add_to_non_existent_list.db", false);
+    let mut db = PickleDb::new("add_to_non_existent_list.db", PickleDbDumpPolicy::DumpUponRequest);
 
     let num = 100;
     let vec_of_nums = vec![1,2,3];
@@ -267,7 +267,7 @@ fn add_to_non_existent_list() {
 fn remove_list() {
     set_test_rsc!("remove_list.db");
 
-    let mut db = PickleDb::new("remove_list.db", true);
+    let mut db = PickleDb::new("remove_list.db", PickleDbDumpPolicy::AutoDump);
 
     // create some lists
     db.lcreate("list1");
@@ -283,7 +283,7 @@ fn remove_list() {
 
     // verify number of lists in file
     {
-        let read_db = PickleDb::load("remove_list.db", false).unwrap();
+        let read_db = PickleDb::load("remove_list.db", PickleDbDumpPolicy::NeverDump).unwrap();
         assert_eq!(read_db.total_keys(), 4);
     }
 
@@ -295,7 +295,7 @@ fn remove_list() {
 
     // verify number of lists in file
     {
-        let read_db = PickleDb::load("remove_list.db", false).unwrap();
+        let read_db = PickleDb::load("remove_list.db", PickleDbDumpPolicy::NeverDump).unwrap();
         assert_eq!(read_db.total_keys(), 3);
     }
 
@@ -308,7 +308,7 @@ fn remove_list() {
 
     // verify number of lists in file
     {
-        let read_db = PickleDb::load("remove_list.db", false).unwrap();
+        let read_db = PickleDb::load("remove_list.db", PickleDbDumpPolicy::NeverDump).unwrap();
         assert_eq!(read_db.total_keys(), 2);
     }
 }
@@ -317,7 +317,7 @@ fn remove_list() {
 fn remove_values_from_list() {
     set_test_rsc!("remove_values_from_list.db");
 
-    let mut db = PickleDb::new("remove_values_from_list.db", true);
+    let mut db = PickleDb::new("remove_values_from_list.db", PickleDbDumpPolicy::AutoDump);
 
     // add a struct to list1
     #[derive(Serialize, Deserialize, Debug)]
@@ -348,7 +348,7 @@ fn remove_values_from_list() {
 
     // read this from file as well
     {
-        let read_db = PickleDb::load("remove_values_from_list.db", false).unwrap();
+        let read_db = PickleDb::load("remove_values_from_list.db", PickleDbDumpPolicy::NeverDump).unwrap();
         assert_eq!(read_db.lget::<MySquare>("list1", 4).unwrap().x, 4);
         assert_eq!(read_db.lget::<String>("list1", 3).unwrap(), "hello");
     }
@@ -375,7 +375,7 @@ fn remove_values_from_list() {
 
     // read this from file as well
     {
-        let read_db = PickleDb::load("remove_values_from_list.db", false).unwrap();
+        let read_db = PickleDb::load("remove_values_from_list.db", PickleDbDumpPolicy::NeverDump).unwrap();
         assert_eq!(read_db.lget::<MySquare>("list1", 3).unwrap().x, 10);
         assert_eq!(read_db.lget::<i32>("list1", 1).unwrap(), 3);
     }
@@ -392,7 +392,7 @@ fn remove_values_from_list() {
 
     // read this from file as well
     {
-        let read_db = PickleDb::load("remove_values_from_list.db", false).unwrap();
+        let read_db = PickleDb::load("remove_values_from_list.db", PickleDbDumpPolicy::NeverDump).unwrap();
         assert_eq!(read_db.lget::<MySquare>("list1", 2).unwrap().x, 10);
         assert_eq!(read_db.lget::<i32>("list1", 0).unwrap(), 2);
     }
@@ -402,7 +402,7 @@ fn remove_values_from_list() {
 fn list_with_special_strings() {
     set_test_rsc!("list_with_special_strings.db");
 
-    let mut db = PickleDb::new("list_with_special_strings.db", true);
+    let mut db = PickleDb::new("list_with_special_strings.db", PickleDbDumpPolicy::AutoDump);
 
     // create a list
     db.lcreate("list1");
@@ -424,7 +424,7 @@ fn list_with_special_strings() {
     assert_eq!(db.lget::<String>("list1", 5).unwrap(), String::from("my\\folder"));
 
     // load db from file
-    let read_db = PickleDb::load("list_with_special_strings.db", false).unwrap();
+    let read_db = PickleDb::load_read_only("list_with_special_strings.db").unwrap();
 
     // read strgins from list loaded from file
     assert_eq!(read_db.lget::<String>("list1", 0).unwrap(), String::from("\"dobule_quotes\""));

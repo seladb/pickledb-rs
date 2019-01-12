@@ -1,4 +1,4 @@
-use pickledb::PickleDb;
+use pickledb::{PickleDb, PickleDbDumpPolicy};
 use std::iter;
 use std::collections::HashMap;
 use rand::{Rng, thread_rng};
@@ -13,7 +13,7 @@ extern crate serde_derive;
 fn lists_and_values() {
     set_test_rsc!("lists_and_values.db");
 
-    let mut db = PickleDb::new("lists_and_values.db", true);
+    let mut db = PickleDb::new("lists_and_values.db", PickleDbDumpPolicy::AutoDump);
 
     // set a few values
     db.set("key1", &String::from("val1"));
@@ -30,7 +30,7 @@ fn lists_and_values() {
 
     // read keys and lists
     {
-        let read_db = PickleDb::load("lists_and_values.db", false).unwrap();
+        let read_db = PickleDb::load_read_only("lists_and_values.db").unwrap();
         assert_eq!(read_db.get::<String>("key1").unwrap(), String::from("val1"));
         assert_eq!(read_db.get::<i32>("key2").unwrap(), 1);
         assert_eq!(read_db.get::<Vec<i32>>("key3").unwrap(), vec![1,2,3]);
@@ -68,7 +68,7 @@ fn gen_random_string<T: Rng>(rng: &mut T, size: usize) -> String {
 fn load_test() {
     set_test_rsc!("load_test.db");
 
-    let mut db = PickleDb::new("load_test.db", false);
+    let mut db = PickleDb::new("load_test.db", PickleDbDumpPolicy::DumpUponRequest);
 
     // number of keys to generate
     let generate_keys = 1000;
@@ -177,7 +177,7 @@ fn load_test() {
     db.dump();
     
     // read again from file
-    let read_db = PickleDb::load("load_test.db", false).unwrap();
+    let read_db = PickleDb::load_read_only("load_test.db").unwrap();
 
     // iterate every key/value_type in map saved before
     for (key, val_type) in map.iter() {
