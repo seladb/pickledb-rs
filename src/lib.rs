@@ -10,12 +10,21 @@ use std::fs;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
 
+/// An enum that determines the policy of dumping PickleDB changes into the file 
 pub enum PickleDbDumpPolicy {
+    /// Never dump any change, file will always remain read-only
     NeverDump,
+    /// Every change will be dumped immeidately and automatically to the file
     AutoDump,
+    /// Data won't be dumped unless the user calls [PickleDB::dump()](struct.PickleDb.html#method.dump) proactively to dump the data
     DumpUponRequest,
+    /// Changes will be dumped to the file periodically, no sooner than the Duration provided by the user. 
+    /// The way this mechanism works is as follows: each time there is a DB change the last DB dump time is checked. 
+    /// If the time that has passed since the last dump is higher than Duration, changes will be dumped, 
+    /// otherwise changes will not be dumped
     PeriodicDump(Duration),
 }
+
 /// A struct that represents a PickleDB object
 pub struct PickleDb {
     map: HashMap<String, String>, 
@@ -32,7 +41,7 @@ impl PickleDb {
     /// # Arguments
     /// 
     /// * `location` - a path where the DB will be stored
-    /// * `dump_policy` - an enum value that sets the policy of dumping DB changes into the file. Please see
+    /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
     ///    [PickleDB::load()](#method.load) to understand the different policy options
     /// 
     /// # Examples
@@ -59,7 +68,7 @@ impl PickleDb {
     /// # Arguments
     /// 
     /// * `location` - a path where the DB is loaded from
-    /// * `dump_policy` - an enum value that sets the policy of dumping DB changes into the file. 
+    /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. 
     ///   The user can choose between the following options:
     ///   * [PickleDbDumpPolicy::NeverDump](enum.PickleDbDumpPolicy.html#variant.NeverDump) - never dump any change,
     ///     file will always remain read-only. When choosing this policy even calling to [dump()](#method.dump) won't dump the data.
@@ -67,10 +76,10 @@ impl PickleDb {
     ///   * [PickleDbDumpPolicy::AutoDump](enum.PickleDbDumpPolicy.html#variant.AutoDump) - every change will be dumped
     ///     immeidately and automatically to the file
     ///   * [PickleDbDumpPolicy::DumpUponRequest](enum.PickleDbDumpPolicy.html#variant.DumpUponRequest) - data won't be dumped
-    ///     automatically, the user has to call [dump()](#method.dump) to dump the data
+    ///     unless the user calls [dump()](#method.dump) proactively to dump the data
     ///   * [PickleDbDumpPolicy::PeriodicDump(Duration)](enum.PickleDbDumpPolicy.html#variant.PeriodicDump) - changes will be
     ///     dumped to the file periodically, no sooner than the Duration provided by the user. The way this mechanism works is
-    ///     as following: each time there is a DB change the last DB dump time is checked. If the time that has passed
+    ///     as follows: each time there is a DB change the last DB dump time is checked. If the time that has passed
     ///     since the last dump is higher than Duration, changes will be dumped, otherwise changes will not be dumped.    
     /// 
     /// # Examples
@@ -305,7 +314,7 @@ impl PickleDb {
     /// Create a new list.
     /// 
     /// This method just creates a new list, it doesn't add any elements to it.
-    /// For adding elements to the list please call `ladd()` or `lextend()`.
+    /// For adding elements to the list please call [ladd()](#method.ladd) or [lextend()](#method.lextend).
     /// If another list or value is already set under this key, they will be overriden,
     /// meaning the new list will override the old list or value.
     /// 
@@ -325,8 +334,8 @@ impl PickleDb {
     /// Check if a list exists.
     /// 
     /// This method returns `true` if the list name exists and `false` otherwise.
-    /// The difference between this method and `exists()` is that this methods checks only
-    /// for lists with that name (key) and `exists()` checks for both values and lists.
+    /// The difference between this method and [exists()](#method.exists) is that this methods checks only
+    /// for lists with that name (key) and [exists()](#method.exists) checks for both values and lists.
     /// 
     /// # Arguments
     /// 
@@ -491,7 +500,7 @@ impl PickleDb {
 
     /// Remove a list.
     /// 
-    /// This method is somewhat similar to `rem()` but with 2 small differences:
+    /// This method is somewhat similar to [rem()](#method.rem) but with 2 small differences:
     /// * This method only removes lists and not key-value pairs
     /// * The return value of this method is the number of items that were in 
     ///   the list that was removed. If the list doesn't exist a value of 0 is
@@ -518,8 +527,8 @@ impl PickleDb {
     /// If the list is not found in the DB or the given position is out of bounds
     /// no item will be removed and `None` will be returned. Otherwise the item will be
     /// removed and `Some(V)` will be returned.
-    /// This method is very similar to `lrem_value()`, the only difference is that this 
-    /// methods returns the value and `lrem_value()` returns only an inidication whether
+    /// This method is very similar to [lrem_value()](#method.lrem_value), the only difference is that this 
+    /// methods returns the value and [lrem_value()](#method.lrem_value) returns only an inidication whether
     /// the item was removed or not.
     /// 
     /// # Arguments
@@ -537,12 +546,12 @@ impl PickleDb {
     /// db.lextend("list1", &vec![1,2,3,4]);
     /// 
     /// // remove item in position 2
-    /// let item2 = db.pop::<i32>("list1", 2);
+    /// let item2 = db.lpop::<i32>("list1", 2);
     /// 
     /// // item2 cotnains 3 and the list now looks like this: [1, 2, 4]
     /// 
     /// // remove item in position 1
-    /// let item1 = db.pop::<i32>("list1", 1);
+    /// let item1 = db.lpop::<i32>("list1", 1);
     /// 
     /// // item1 cotnains 2 and the list now looks like this: [1, 4]
     /// ```
@@ -576,8 +585,8 @@ impl PickleDb {
     /// If the list is not found in the DB or the given position is out of bounds
     /// no item will be removed and `false` will be returned. Otherwise the item will be
     /// removed and `true` will be returned.
-    /// This method is very similar to `pop()`, the only difference is that this 
-    /// methods returns an indication and `pop()` returns the actual item that was removed.
+    /// This method is very similar to [lpop()](#method.lpop), the only difference is that this 
+    /// methods returns an indication and [lpop()](#method.lpop) returns the actual item that was removed.
     /// 
     /// # Arguments
     /// 

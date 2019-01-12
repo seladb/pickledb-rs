@@ -1,4 +1,6 @@
 use pickledb::{PickleDb, PickleDbDumpPolicy};
+use std::time::Duration;
+use std::{thread, time};
 
 mod common;
 
@@ -119,10 +121,107 @@ fn read_only_policy_test() {
 
 #[test]
 fn dump_upon_request_policy_test() {
-    //TODO
+    set_test_rsc!("dump_upon_request_policy_test.db");
+
+    // create a DB and set a value
+    let mut db = PickleDb::new("dump_upon_request_policy_test.db", PickleDbDumpPolicy::DumpUponRequest);
+    db.set("key1", &String::from("value1"));
+
+    // verify file is not yet created
+    assert!(PickleDb::load_read_only("dump_upon_request_policy_test.db").is_err());
+
+    // dump to file
+    db.dump();
+
+    // verify the change is dumped to the file
+    {
+        let read_db = PickleDb::load_read_only("dump_upon_request_policy_test.db").unwrap();
+        assert!(read_db.exists("key1"));
+    }
+
+    // set another key
+    db.set("key2", &String::from("value2"));
+
+    // drop DB object
+    drop(db);
+
+    // verify the change is dumped to the file
+    {
+        let read_db = PickleDb::load_read_only("dump_upon_request_policy_test.db").unwrap();
+        assert!(read_db.exists("key1"));
+        assert!(read_db.exists("key2"));
+    }
 }
 
 #[test]
 fn periodic_dump_policy_test() {
-    //TODO
+    set_test_rsc!("periodic_dump_policy_test.db");
+
+    // create a DB and set a value
+    let mut db = PickleDb::new("periodic_dump_policy_test.db", PickleDbDumpPolicy::PeriodicDump(Duration::new(1, 0)));
+    db.set("key1", &String::from("value1"));
+
+    // verify file is not yet created
+    assert!(PickleDb::load_read_only("periodic_dump_policy_test.db").is_err());
+
+    // sleep for 0.5 sec
+    thread::sleep(time::Duration::from_millis(500));
+
+    // verify file is not yet created
+    assert!(PickleDb::load_read_only("periodic_dump_policy_test.db").is_err());
+
+    // sleep for 0.55 sec
+    thread::sleep(time::Duration::from_millis(550));
+
+    // make another change in the DB
+    db.set("key2", &String::from("value2"));
+
+    // verify the change is dumped to the file
+    {
+        let read_db = PickleDb::load_read_only("periodic_dump_policy_test.db").unwrap();
+        assert!(read_db.exists("key1"));
+        assert!(read_db.exists("key2"));
+    }
+
+    // make another change in the DB
+    db.set("key3", &String::from("value3"));
+
+    // verify the change is not yet dumped to the file
+    {
+        let read_db = PickleDb::load_read_only("periodic_dump_policy_test.db").unwrap();
+        assert!(!read_db.exists("key3"));
+    }
+
+    // dumb DB to file
+    db.dump();
+
+    // verify the change is now dumped to the file
+    {
+        let read_db = PickleDb::load_read_only("periodic_dump_policy_test.db").unwrap();
+        assert!(read_db.exists("key3"));
+    }
+
+    // sleep for 1 more second
+    thread::sleep(time::Duration::from_secs(1));
+
+    // make another change in the DB
+    db.set("key4", &String::from("value4"));
+
+    // verify the change is dumped to the file
+    {
+        let read_db = PickleDb::load_read_only("periodic_dump_policy_test.db").unwrap();
+        assert!(read_db.exists("key4"));
+    }
+
+    // make another change in the DB
+    db.set("key5", &String::from("value5"));
+
+    // drop DB and verify change is written to DB
+    drop(db);
+
+    // verify the change is dumped to the file
+    {
+        let read_db = PickleDb::load_read_only("periodic_dump_policy_test.db").unwrap();
+        assert!(read_db.exists("key5"));
+    }
 }
