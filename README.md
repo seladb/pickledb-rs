@@ -19,12 +19,12 @@ fn main() {
     db.set("key1", &100);
     
     // print the value of key1
-    println!("Value of key1 is: {}", db.get::<i32>("key1"));
+    println!("The value of key1 is: {}", db.get::<i32>("key1").unwrap());
 
     // load the DB from the same file
-    let db2 = PickleDb::load("example.db", PickleDbDumpPolicy::DumpUponRequest);
+    let db2 = PickleDb::load("example.db", PickleDbDumpPolicy::DumpUponRequest).unwrap();
 
     // print the value of key1
-    println!("Value of key1 as loaded from file is: {}", db2.get::<i32>("key1"));
+    println!("The value of key1 as loaded from file is: {}", db2.get::<i32>("key1").unwrap());
 }
 ```
