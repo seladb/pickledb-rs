@@ -43,7 +43,7 @@
 //! * Strings
 //! * Vectors
 //! * Tuples
-//! * Strcuts that are serializable (please read more below)
+//! * Strcuts and Enums that are serializable (please read more below)
 //! 
 //! ## Serialization
 //! 

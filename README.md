@@ -1,7 +1,9 @@
-PickleDB Rust
-=============
+PickleDB
+========
 
 [![Build Status](https://api.travis-ci.org/seladb/pickledb-rs.svg?branch=master)](https://travis-ci.org/seladb/pickledb-rs)
+[![Crate](https://img.shields.io/crates/v/pickledb.svg)](https://crates.io/crates/pickledb)
+[![API](https://docs.rs/pickledb/badge.svg)](https://docs.rs/pickledb)
 
 PickleDB-rs is a lightweight and simple key-value store written in Rust, heavily inspired by [Python's PickleDB](https://pythonhosted.org/pickleDB/)
 
@@ -31,7 +33,7 @@ fn main() {
 
 ## Installation
 
-This crate works with Cargo and can be found in [crates.io](https://crates.io/crates/pickledb-rs)
+This crate works with Cargo and can be found in [crates.io](https://crates.io/crates/pickledb)
 Add this to your `Cargo.toml`:
 
 ```toml
@@ -41,4 +43,4 @@ pickledb-rs = "*"
 
 ## Documentation
 
-All documentation for this crate can be found in [docs.rs](https://docs.rs/pickledb-rs)
+All documentation for this crate can be found in [docs.rs](https://docs.rs/pickledb)
