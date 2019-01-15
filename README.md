@@ -28,3 +28,17 @@ fn main() {
     println!("The value of key1 as loaded from file is: {}", db2.get::<i32>("key1").unwrap());
 }
 ```
+
+## Installation
+
+This crate works with Cargo and can be found in [crates.io](https://crates.io/crates/pickledb-rs)
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+pickledb-rs = "*"
+```
+
+## Documentation
+
+All documentation for this crate can be found in [docs.rs](https://docs.rs/pickledb-rs)

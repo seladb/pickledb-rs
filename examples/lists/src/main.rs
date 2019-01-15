@@ -3,7 +3,7 @@
 //! * Loading am existing DB from a file
 //! * Creating and removing lists
 //! * Adding and removing items of different type to lists
-//! * Retreiving list items
+//! * Retrieving list items
 //! 
 #[macro_use]
 extern crate serde_derive;
@@ -11,7 +11,7 @@ extern crate serde_derive;
 use pickledb::{PickleDb, PickleDbDumpPolicy};
 use std::fmt::{self, Formatter, Display};
 
-/// Define an example struct which represnets a rectangle. 
+/// Define an example struct which represents a rectangle. 
 /// Next we'll show how to use it in lists.
 #[derive(Serialize, Deserialize)]
 struct Rectangle {

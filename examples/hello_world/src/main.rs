@@ -9,7 +9,7 @@ extern crate serde_derive;
 use pickledb::{PickleDb, PickleDbDumpPolicy};
 use std::fmt::{self, Formatter, Display};
 
-/// Define an example struct which represnets a rectangle. 
+/// Define an example struct which represents a rectangle. 
 /// Next we'll show how to write and read it into the DB.
 #[derive(Serialize, Deserialize)]
 struct Rectangle {

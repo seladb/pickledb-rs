@@ -1,7 +1,96 @@
-//! Crate documentation placeholder
+//! PickleDB
+//! ========
 //! 
+//! PickleDB-rs is a lightweight and simple key-value store written in Rust, heavily inspired by [Python's PickleDB](https://pythonhosted.org/pickleDB/)
 //! 
+//! PickleDB's architecture is very simple and straight-forward: the whole key-value data structure is stored in memory and is dumped to a file
+//! periodically according to a policy defined by the user. There are APIs to create a new key-value store in memory or to load it from a file.
+//! Everything runs in the user's process and thread and in its memory, which means that the key-value data will be stored in the user 
+//! process's memory and each API call will access that key-value store directly and may trigger a dump to the DB file. There are no additional 
+//! threads or processes created throughout the life-cycle of any of the APIs.
 //! 
+//! ## So what is it useful for? 
+//! 
+//! Basically for any use case that needs a simple and relatively small key-value store that can run in-process and
+//! be stored in a file. Most of the key-value stores out there provide high scalability, performance and robustness, but in the cost of a very 
+//! complex architecure, a lot of installation and configuration, and in many cases require a descent amount of resources. 
+//! But sometimes you don't need this scalability and performance and all you need is a simple solution that can be easily set up and is easy to
+//! use and understand. That's where PickleDB-rs comes into picture! I personally encountered several use cases like that and that's how I came 
+//! to know about [Python's PickleDB](https://pythonhosted.org/pickleDB/), and I thought it'd be nice to build one in Rust as well.
+//! 
+//! ## Main features
+//! 
+//! Like the [Python's PickleDB](https://pythonhosted.org/pickleDB/), the API is very much inspired by Redis API and provides the following
+//! main capabilities:
+//! * Create a new key-value store in memory or load it from a file
+//! * Dump the key-value store to a file according to a user-defined policy
+//! * Set and get key-value pairs. A very unique feature in PickleDB is that the key-value map is heterogeneous. Please see more details below
+//! * Manage lists. Every list has a name (which is its key in the key-value store) and a list of items it stores. PickleDB provides APIs to 
+//!   create and delete lists and to add or remove items from them. Lists are also heterogeneous, meaning each list can store objects of different 
+//!   types. Please see more details below
+//! 
+//! Please take a look at the API documentation to get more details.
+//! 
+//! ## PickleDB provides heterogeneous map and lists!
+//! 
+//! Heterogeneous data structures are the ones in which the data elements doesn't belong to the same data type. All the data elements have 
+//! different data types. As you know, Rust doesn't have a built-it mechanism for working with heterogeneous data structures. For example: it's not 
+//! easy to define a list where each element has a different data type, and it's also not easy to define a map which contains keys or values of different 
+//! data types. PickleDB tries to address this challenge and allows values to be of any type and also build lists that contains items of different data
+//! types. It achieves that using serialization, which you can read more about below. This is a pretty cool feature that you may find very useful. 
+//! The different types that are supported are:
+//! * All primitive types
+//! * Strings
+//! * Vectors
+//! * Tuples
+//! * Strcuts that are serializable (please read more below)
+//! 
+//! ## Serialization
+//! 
+//! Serialization is an important part of PickleDB. It is the way heterogeneous data structures are enabled: instead of saving the actual object,
+//! PickleDB stores a serialized version of it. That way all objects are "normalized" to the same type and can be stored in Rust data structures
+//! such as a HashMap or a Vector.
+//! 
+//! Serialization is also the way data is stored in a file: before saving to the file, all data in memory is serialized and then it is written to
+//! the file; upon loading the serialized data is read from the file and then deserialized to memory. Of course serialization and deserialization has 
+//! their performance cost but high performance is not one of PickleDB's main objectives and I think it's a fair price to pay for achieving 
+//! heterogeneous data structures.
+//! 
+//! In order to achieve this magic, all objects must be serializable. PickleDB uses the [Serde](https://serde.rs/) library for serialization and 
+//! it currently supports only [JSON serialization](https://docs.serde.rs/serde_json/). In the future I intend to add more serialization options
+//! such as [bincode](https://crates.io/crates/bincode) or [pickle](https://crates.io/crates/serde-pickle).
+//! 
+//! So what does it mean that all objects must be serializable? That means that all map values and list items that you use must be serializable.
+//! Fortunately Serde already provides out-of-the-box serialization for most of the common objects: all primitive types, strings, vectors and tuples
+//! are already serializable and you don't need to do anything to use them. But if you want to define your own structs or enums, you need to make sure 
+//! they're serializable, which means that:
+//! * They should include the  `#[derive(Serialize, Deserialize)]` macro. Please see [here](https://serde.rs/derive.html) for more details
+//! * If a struct contains non-primitive members, they should be serializable as well
+//! * You should include `serde = "1.0"` and `serde_derive = "1.0"` dependencies in your `Cargo.toml` file
+//! 
+//! You can take a look at the examples provided with PickleDB to get a better idea of how this works. 
+//! 
+//! ## Dumping data to a file
+//! 
+//! As mentioned before, PickleDB stores all the data in a file for persistency. Dumping data to a file is pretty expensive in terms of time and
+//! performance, for various reasons:
+//! * Everything in PickleDB runs in the user process context (including file writes), so frequent writes will affect the user process's performance
+//! * The current implementation dumps all of the data into the file, which gets more significant as data gets bigger
+//! * Before writing to the file the data is being serialized, which also has a performance cost
+//! 
+//! Although performance is not a big concern for PickleDB, I felt it'd make sense to implement different dump policies for the user to choose when
+//! creating a new DB or loading one from a file. Here are the different policies and the differences between them:
+//! * [PickleDbDumpPolicy::NeverDump](enum.PickleDbDumpPolicy.html#variant.NeverDump) - never dump any change, file will always remain read-only. 
+//!   When choosing this policy even calling to [dump()](struct.PickleDb.html#method.dump) won't dump the data.
+//! * [PickleDbDumpPolicy::AutoDump](enum.PickleDbDumpPolicy.html#variant.AutoDump) - every change will be dumped immediately and automatically to the file
+//! * [PickleDbDumpPolicy::DumpUponRequest](enum.PickleDbDumpPolicy.html#variant.DumpUponRequest) - data won't be dumped unless the user calls 
+//!   [dump()](struct.PickleDb.html#method.dump) proactively to dump the data
+//! * [PickleDbDumpPolicy::PeriodicDump(Duration)](enum.PickleDbDumpPolicy.html#variant.PeriodicDump) - changes will be dumped to the file periodically, 
+//!   no sooner than the Duration provided by the user. The way this mechanism works is as follows: each time there is a DB change the last DB dump time 
+//!   is checked. If the time that has passed since the last dump is higher than Duration, changes will be dumped, otherwise changes will not be dumped.  
+//! 
+//! Apart from this dump policy, persistency is also kept by a implementing the `Drop` trait for the `PickleDB` object which ensures all in-memory data 
+//! is dumped to the file upon destruction of the object.
 //! 
 use std::io::Error;
 use std::collections::HashMap;
@@ -14,7 +103,7 @@ use serde_json;
 pub enum PickleDbDumpPolicy {
     /// Never dump any change, file will always remain read-only
     NeverDump,
-    /// Every change will be dumped immeidately and automatically to the file
+    /// Every change will be dumped immediately and automatically to the file
     AutoDump,
     /// Data won't be dumped unless the user calls [PickleDB::dump()](struct.PickleDb.html#method.dump) proactively to dump the data
     DumpUponRequest,
@@ -74,7 +163,7 @@ impl PickleDb {
     ///     file will always remain read-only. When choosing this policy even calling to [dump()](#method.dump) won't dump the data.
     ///     Choosing this option is the same like calling [PickleDB::load_read_only()](#method.load_read_only)
     ///   * [PickleDbDumpPolicy::AutoDump](enum.PickleDbDumpPolicy.html#variant.AutoDump) - every change will be dumped
-    ///     immeidately and automatically to the file
+    ///     immediately and automatically to the file
     ///   * [PickleDbDumpPolicy::DumpUponRequest](enum.PickleDbDumpPolicy.html#variant.DumpUponRequest) - data won't be dumped
     ///     unless the user calls [dump()](#method.dump) proactively to dump the data
     ///   * [PickleDbDumpPolicy::PeriodicDump(Duration)](enum.PickleDbDumpPolicy.html#variant.PeriodicDump) - changes will be
@@ -176,7 +265,7 @@ impl PickleDb {
     /// # Arguments
     /// 
     /// * `key` - a string key
-    /// * `value` - a value of any serialzable type
+    /// * `value` - a value of any serializable type
     /// 
     /// # Examples
     /// 
@@ -217,7 +306,7 @@ impl PickleDb {
     /// Get a value of a key.
     /// 
     /// The key is always a string but the value can be of any type. It's the user's
-    /// responisibility to know the value type and give it while calling this method.
+    /// responsibility to know the value type and give it while calling this method.
     /// If the key doesn't exist or if the type is wrong, `None` will be returned.
     /// Otherwise `Some(V)` will be returned.
     /// Since the values are stored in a serialized way the returned object is
@@ -315,7 +404,7 @@ impl PickleDb {
     /// 
     /// This method just creates a new list, it doesn't add any elements to it.
     /// For adding elements to the list please call [ladd()](#method.ladd) or [lextend()](#method.lextend).
-    /// If another list or value is already set under this key, they will be overriden,
+    /// If another list or value is already set under this key, they will be overridden,
     /// meaning the new list will override the old list or value.
     /// 
     /// # Arguments
@@ -388,7 +477,7 @@ impl PickleDb {
     /// items of different types. That means that the item can be of any type that is serializable.
     /// That includes all primitive types, vectors, tuples and every struct that has the 
     /// `#[derive(Serialize, Deserialize)` attribute.
-    /// This method adds multiple items to the list, but since they're in a vecotr that means all
+    /// This method adds multiple items to the list, but since they're in a vector that means all
     /// of them are of the same type. Of course it doesn't mean that the list cannot contain items
     /// of other types as well, as you can see in the example below.
     /// The method return `true` if all items were added successfully or `false` if the list name 
@@ -438,7 +527,7 @@ impl PickleDb {
     /// Get an item of of a certain list in a certain position.
     /// 
     /// This method takes a list name and a position inside the list 
-    /// and retrives the item in this position. It's the user's responisibility 
+    /// and retrieves the item in this position. It's the user's responsibility 
     /// to know what is the correct type of the item and give it while calling this method.
     /// Since the item in the lists are stored in a serialized way the returned object 
     /// is not a reference to the item stored in a DB but actually a new instance of it.
@@ -520,7 +609,7 @@ impl PickleDb {
     /// Pop an item out of a list.
     /// 
     /// This method takes a list name and a position inside the list, removes the
-    /// item in this position and returns it to the user. It's the user's responisibility 
+    /// item in this position and returns it to the user. It's the user's responsibility 
     /// to know what is the correct type of the item and give it while calling this method.
     /// Since the item in the lists are stored in a serialized way the returned object 
     /// is not a reference to the item stored in a DB but actually a new instance of it.
@@ -528,7 +617,7 @@ impl PickleDb {
     /// no item will be removed and `None` will be returned. Otherwise the item will be
     /// removed and `Some(V)` will be returned.
     /// This method is very similar to [lrem_value()](#method.lrem_value), the only difference is that this 
-    /// methods returns the value and [lrem_value()](#method.lrem_value) returns only an inidication whether
+    /// methods returns the value and [lrem_value()](#method.lrem_value) returns only an indication whether
     /// the item was removed or not.
     /// 
     /// # Arguments
@@ -548,12 +637,12 @@ impl PickleDb {
     /// // remove item in position 2
     /// let item2 = db.lpop::<i32>("list1", 2);
     /// 
-    /// // item2 cotnains 3 and the list now looks like this: [1, 2, 4]
+    /// // item2 contains 3 and the list now looks like this: [1, 2, 4]
     /// 
     /// // remove item in position 1
     /// let item1 = db.lpop::<i32>("list1", 1);
     /// 
-    /// // item1 cotnains 2 and the list now looks like this: [1, 4]
+    /// // item1 contains 2 and the list now looks like this: [1, 4]
     /// ```
     /// 
     pub fn lpop<V>(&mut self, name: &str, pos: usize) -> Option<V> 
