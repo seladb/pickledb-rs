@@ -5,7 +5,7 @@ PickleDB
 [![Crate](https://img.shields.io/crates/v/pickledb.svg)](https://crates.io/crates/pickledb)
 [![API](https://docs.rs/pickledb/badge.svg)](https://docs.rs/pickledb)
 
-PickleDB-rs is a lightweight and simple key-value store written in Rust, heavily inspired by [Python's PickleDB](https://pythonhosted.org/pickleDB/)
+PickleDB is a lightweight and simple key-value store written in Rust, heavily inspired by [Python's PickleDB](https://pythonhosted.org/pickleDB/)
 
 ## PickleDB is fun and easy to use
 
@@ -38,9 +38,18 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-pickledb-rs = "*"
+pickledb = "*"
 ```
 
 ## Documentation
 
 All documentation for this crate can be found in [docs.rs](https://docs.rs/pickledb)
+
+## Examples
+
+There are currently two examples shipped with PickleDB:
+
+* [Hello World](https://github.com/seladb/pickledb-rs/tree/master/examples/hello_world) which shows the basic usage of PickleDB: 
+  create a new DB, load a DB from file, get/set key-value pairs of different types, and more
+* [Lists](https://github.com/seladb/pickledb-rs/tree/master/examples/lists) which shows how to use lists in PickleDB: 
+  create new lists, add/remove items from lists, retrieve items from lists, remove lists, and more
