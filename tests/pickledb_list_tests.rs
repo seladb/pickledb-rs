@@ -15,19 +15,19 @@ fn basic_lists() {
 
     // add a number to list1
     let num = 100;
-    assert!(db.ladd("list1", &num));
+    assert!(db.ladd("list1", &num).is_some());
 
     // add a floating point number to list1
     let float_num = 1.224;
-    assert!(db.ladd("list1", &float_num));
+    assert!(db.ladd("list1", &float_num).is_some());
 
     // add a string to list1
     let mystr = String::from("my string");
-    assert!(db.ladd("list1", &mystr));
+    assert!(db.ladd("list1", &mystr).is_some());
 
     // add a Vec to list1
     let myvec = vec![1,2,3];
-    assert!(db.ladd("list1", &myvec));
+    assert!(db.ladd("list1", &myvec).is_some());
 
     // add a struct to list1
     #[derive(Serialize, Deserialize, Debug)]
@@ -37,18 +37,18 @@ fn basic_lists() {
     }
     let mycoor = Coor { x: 1, y
     : 2 };
-    assert!(db.ladd("list1", &mycoor));
+    assert!(db.ladd("list1", &mycoor).is_some());
 
     // create another list
     db.lcreate("list2");
 
     // add a number to list2
     let num2 = 200;
-    assert!(db.ladd("list2", &num2));
+    assert!(db.ladd("list2", &num2).is_some());
 
     // add a string to list2
     let mystr2 = String::from("hello world");
-    assert!(db.ladd("list2", &mystr2));
+    assert!(db.ladd("list2", &mystr2).is_some());
 
 
     // read first item in list1 - int
@@ -122,21 +122,21 @@ fn add_and_extend_lists() {
     db.lcreate("list3");
 
     // list1 - add 6 elements using lextend
-    assert!(db.lextend("list1", &vec![1,2,3,4,5,6]));
+    assert!(db.lextend("list1", &vec![1,2,3,4,5,6]).is_some());
 
     // list1 - add 6 elements using ladd
-    assert!(db.ladd("list2", &1));
-    assert!(db.ladd("list2", &2));
-    assert!(db.ladd("list2", &3));
-    assert!(db.ladd("list2", &4));
-    assert!(db.ladd("list2", &5));
-    assert!(db.ladd("list2", &6));
+    db.ladd("list2", &1).unwrap()
+        .ladd(&2)
+        .ladd(&3)
+        .ladd(&4)
+        .ladd(&5)
+        .ladd(&6);
 
     // list3 - add 6 elements using lextend and ladd
-    assert!(db.ladd("list3", &1));
-    assert!(db.lextend("list3", &vec![2,3]));
-    assert!(db.ladd("list3", &4));
-    assert!(db.lextend("list3", &vec![5,6]));
+    db.ladd("list3", &1).unwrap()
+        .lextend(&vec![2,3])
+        .ladd(&4)
+        .lextend(&vec![5,6]);
 
     // verify lists length
     assert_eq!(db.llen("list1"), 6);
@@ -168,8 +168,8 @@ fn override_lists() {
     let mut db = PickleDb::new("override_lists.db", PickleDbDumpPolicy::AutoDump);
 
     // create a list and add some values to it
-    db.lcreate("list1");
-    assert!(db.lextend("list1", &vec!["aa", "bb", "cc"]));
+    db.lcreate("list1")
+      .lextend(&vec!["aa", "bb", "cc"]);
 
     // verify list len is 3
     assert_eq!(db.llen("list1"), 3);
@@ -189,7 +189,7 @@ fn override_lists() {
     }
 
     // add items to the override list
-    assert!(db.lextend("list1", &vec![1,2,3,4]));
+    assert!(db.lextend("list1", &vec![1,2,3,4]).is_some());
 
     // verify list contains the new data
     assert!(db.lexists("list1"));
@@ -210,9 +210,9 @@ fn lget_corner_cases() {
     let mut db = PickleDb::new("lget_corner_cases.db", PickleDbDumpPolicy::DumpUponRequest);
 
     // create a list and add some values
-    db.lcreate("list1");
-    assert!(db.lextend("list1", &vec!["hello", "world", "good", "morning"]));
-    assert!(db.ladd("list1", &100));
+    db.lcreate("list1")
+      .lextend(&vec!["hello", "world", "good", "morning"])
+      .ladd(&100);
 
     // lget values that exist
     assert_eq!(db.lget::<String>("list1", 0).unwrap(), "hello");
@@ -241,26 +241,26 @@ fn add_to_non_existent_list() {
     let vec_of_nums = vec![1,2,3];
 
     // add items to list that doesn't exist
-    assert_eq!(db.ladd("list1", &num), false);
-    assert_eq!(db.lextend("list1", &vec_of_nums), false);
+    assert!(db.ladd("list1", &num).is_none());
+    assert!(db.lextend("list1", &vec_of_nums).is_none());
 
     // creat a list
     db.lcreate("list1");
 
     // add items to list that doesn't exist
-    assert_eq!(db.ladd("list2", &num), false);
-    assert_eq!(db.lextend("list2", &vec_of_nums), false);
+    assert!(db.ladd("list2", &num).is_none());
+    assert!(db.lextend("list2", &vec_of_nums).is_none());
 
     // add items to the list that was created
-    assert!(db.ladd("list1", &num));
-    assert!(db.lextend("list1", &vec_of_nums));
+    assert!(db.ladd("list1", &num).is_some());
+    assert!(db.lextend("list1", &vec_of_nums).is_some());
 
     // delete the list
     assert!(db.rem("list1"));
 
     // add items to list that doesn't exist
-    assert_eq!(db.ladd("list1", &num), false);
-    assert_eq!(db.lextend("list1", &vec_of_nums), false);
+    assert!(db.ladd("list1", &num).is_none());
+    assert!(db.lextend("list1", &vec_of_nums).is_none());
 }
 
 #[test]
@@ -269,17 +269,18 @@ fn remove_list() {
 
     let mut db = PickleDb::new("remove_list.db", PickleDbDumpPolicy::AutoDump);
 
-    // create some lists
-    db.lcreate("list1");
-    db.lcreate("list2");
-    db.lcreate("list3");
-    db.lcreate("list4");
+    // create some lists add add values to them
+    db.lcreate("list1")
+      .lextend(&vec![1,2,3,4,5,6,7,8,9,10]);
 
-    // add values to lists
-    assert!(db.lextend("list1", &vec![1,2,3,4,5,6,7,8,9,10]));
-    assert!(db.lextend("list2", &vec!['a', 'b', 'c', 'd', 'e']));
-    assert!(db.lextend("list3", &vec![1.2, 1.3, 2.1, 3.1, 3.3, 7.889]));
-    assert!(db.lextend("list4", &vec!["aaa", "bbb", "ccc", "ddd", "eee"]));
+    db.lcreate("list2")
+      .lextend(&vec!['a', 'b', 'c', 'd', 'e']);
+
+    db.lcreate("list3")
+      .lextend(&vec![1.2, 1.3, 2.1, 3.1, 3.3, 7.889]);
+
+    db.lcreate("list4")
+      .lextend(&vec!["aaa", "bbb", "ccc", "ddd", "eee"]);
 
     // verify number of lists in file
     {
@@ -326,11 +327,11 @@ fn remove_values_from_list() {
     }
 
     // create a list and add some values
-    db.lcreate("list1");
-    assert!(db.lextend("list1", &vec![1,2,3]));
-    assert!(db.ladd("list1", &String::from("hello")));
-    assert!(db.ladd("list1", &1.234));
-    assert!(db.lextend("list1", &vec![MySquare { x: 4 }, MySquare { x: 10 }]));
+    db.lcreate("list1")
+      .lextend(&vec![1,2,3])
+      .ladd(&String::from("hello"))
+      .ladd(&1.234)
+      .lextend(&vec![MySquare { x: 4 }, MySquare { x: 10 }]);
 
     // list now looks like this:
     // Indices: [0, 1, 2, 3,       4,     5,           6           ]
@@ -404,17 +405,15 @@ fn list_with_special_strings() {
 
     let mut db = PickleDb::new("list_with_special_strings.db", PickleDbDumpPolicy::AutoDump);
 
-    // create a list
-    db.lcreate("list1");
-
-    // add special strings to the list
-    assert!(db.ladd("list1", &String::from("\"dobule_quotes\"")));
-    assert!(db.ladd("list1", &String::from("\'single_quotes\'")));
-    assert!(db.ladd("list1", &String::from("שָׁלוֹם")));
-    assert!(db.ladd("list1", &String::from("😻")));
-    assert!(db.ladd("list1", &String::from("\nescapes\t\r")));
-    assert!(db.ladd("list1", &String::from("my\\folder")));
-
+    // create a list and add special strings to it
+    db.lcreate("list1")
+      .ladd(&String::from("\"dobule_quotes\""))
+      .ladd(&String::from("\'single_quotes\'"))
+      .ladd(&String::from("שָׁלוֹם"))
+      .ladd(&String::from("😻"))
+      .ladd(&String::from("\nescapes\t\r"))
+      .ladd(&String::from("my\\folder"));
+ 
     // read special strings
     assert_eq!(db.lget::<String>("list1", 0).unwrap(), String::from("\"dobule_quotes\""));
     assert_eq!(db.lget::<String>("list1", 1).unwrap(), String::from("\'single_quotes\'"));

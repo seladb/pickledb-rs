@@ -114,6 +114,84 @@ pub enum PickleDbDumpPolicy {
     PeriodicDump(Duration),
 }
 
+/// A struct for extending PickleDB lists and adding more items to them
+pub struct PickleDbListExtender<'a> {
+    db: &'a mut PickleDb,
+    list_name: String
+}
+
+impl<'a> PickleDbListExtender<'a> {
+    /// Add a single item to an existing list.
+    /// 
+    /// As mentioned before, the lists are heterogeneous, meaning a single list can contain 
+    /// items of different types. That means that the item can be of any type that is serializable.
+    /// That includes all primitive types, vectors, tuples and every struct that has the 
+    /// `#[derive(Serialize, Deserialize)` attribute.
+    /// The method returns another `PickleDbListExtender` object that enables to continue adding
+    /// items to the list.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `value` - a reference of the item to add to the list
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust,ignore
+    /// // create a new list
+    /// db.lcreate("list1")
+    /// 
+    /// // add items of different types to the list
+    ///   .ladd(&100)
+    ///   .ladd(&String::from("my string"))
+    ///   .ladd(&vec!["aa", "bb", "cc"]);
+    /// ```
+    /// 
+    pub fn ladd<V>(&mut self, value: &V) -> PickleDbListExtender
+        where
+            V: Serialize
+    {
+        self.db.ladd(&self.list_name, value).unwrap()
+    }
+
+    /// Add multiple items to an existing list.
+    /// 
+    /// As mentioned before, the lists are heterogeneous, meaning a single list can contain 
+    /// items of different types. That means that the item can be of any type that is serializable.
+    /// That includes all primitive types, vectors, tuples and every struct that has the 
+    /// `#[derive(Serialize, Deserialize)` attribute.
+    /// This method adds multiple items to the list, but since they're in a vector that means all
+    /// of them are of the same type. Of course it doesn't mean that the list cannot contain items
+    /// of other types as well, as you can see in the example below.
+    /// The method returns another `PickleDbListExtender` object that enables to continue adding 
+    /// items to the list.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `seq` - a vector containing the new items to add to the list
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust,ignore
+    /// // create a new list
+    /// db.lcreate("list1");
+    /// 
+    /// // add a bunch of numbers to the list
+    /// db.lextends("list1", &vec![100, 200, 300])
+    /// 
+    /// // add a bunch of strings to the list
+    ///   .lextends(&vec!["aa", "bb", "cc"]);
+    /// 
+    /// // now the list contains 6 items and looks like this: [100, 200, 300, "aa, "bb", "cc"]
+    /// ```
+    /// 
+    pub fn lextend<V>(&mut self, seq: &Vec<V>) -> PickleDbListExtender
+        where
+            V: Serialize
+    {
+        self.db.lextend(&self.list_name, seq).unwrap()
+    }
+}
+
 /// A struct that represents a PickleDB object
 pub struct PickleDb {
     map: HashMap<String, String>, 
@@ -406,18 +484,21 @@ impl PickleDb {
     /// For adding elements to the list please call [ladd()](#method.ladd) or [lextend()](#method.lextend).
     /// If another list or value is already set under this key, they will be overridden,
     /// meaning the new list will override the old list or value.
+    /// The method returns an object of type `PickleDbListExtender` that enables to add items 
+    /// to the newly created list
     /// 
     /// # Arguments
     /// 
     /// * `name` - the key of the list that will be created
     /// 
-    pub fn lcreate(&mut self, name: &str) {
+    pub fn lcreate(&mut self, name: &str) -> PickleDbListExtender {
         let new_list: Vec<String> = Vec::new();
         if self.map.contains_key(name) {
             self.map.remove(name);
         }
         self.list_map.insert(String::from(name), new_list);
         self.dumpdb();
+        PickleDbListExtender { db: self, list_name: String::from(name) }
     }
 
     /// Check if a list exists.
@@ -440,8 +521,8 @@ impl PickleDb {
     /// items of different types. That means that the item can be of any type that is serializable.
     /// That includes all primitive types, vectors, tuples and every struct that has the 
     /// `#[derive(Serialize, Deserialize)` attribute.
-    /// The method return `true` if the item was added successfully or `false` if the list name 
-    /// isn't found in the DB.
+    /// The method returns a `Some(PickleDbListExtender)` object that enables to add more items to the list
+    /// if the item was added successfully or `None` if the list name isn't found in the DB.
     /// 
     /// # Arguments
     /// 
@@ -454,17 +535,13 @@ impl PickleDb {
     /// // create a new list
     /// db.lcreate("list1");
     /// 
-    /// // add a number item to the list
-    /// db.ladd("list1", &100);
-    /// 
-    /// // add a String item to the list
-    /// db.ladd("list1", &String::from("my string"));
-    /// 
-    /// // add a vector item to the list
-    /// db.ladd("list1", &vec!["aa", "bb", "cc"]);
+    /// // add items of different types to the list
+    /// db.ladd("list1", &100).unwrap()
+    ///   .ladd(&String::from("my string"))
+    ///   .ladd(&vec!["aa", "bb", "cc"]);
     /// ```
     /// 
-    pub fn ladd<V>(&mut self, name: &str, value: &V) -> bool
+    pub fn ladd<V>(&mut self, name: &str, value: &V) -> Option<PickleDbListExtender>
         where
             V: Serialize
     {
@@ -480,8 +557,8 @@ impl PickleDb {
     /// This method adds multiple items to the list, but since they're in a vector that means all
     /// of them are of the same type. Of course it doesn't mean that the list cannot contain items
     /// of other types as well, as you can see in the example below.
-    /// The method return `true` if all items were added successfully or `false` if the list name 
-    /// isn't found in the DB.
+    /// The method return `Some(PickleDbListExtender)` that enables to add more items to the list 
+    /// if all items were added successfully or `None` if the list name isn't found in the DB.
     /// 
     /// # Arguments
     /// 
@@ -495,18 +572,18 @@ impl PickleDb {
     /// db.lcreate("list1");
     /// 
     /// // add a bunch of numbers to the list
-    /// db.lextends("list1", &vec![100, 200, 300]);
+    /// db.lextends("list1", &vec![100, 200, 300])
     /// 
     /// // add a String item to the list
-    /// db.ladd("list1", &String::from("my string"));
+    ///   .ladd(&String::from("my string"))
     /// 
     /// // add a vector item to the list
-    /// db.ladd("list1", &vec!["aa", "bb", "cc"]);
+    ///   .ladd(&vec!["aa", "bb", "cc"]);
     /// 
     /// // now the list contains 5 items and looks like this: [100, 200, 300, "my string", ["aa, "bb", "cc"]]
     /// ```
     /// 
-    pub fn lextend<V>(&mut self, name: &str, seq: &Vec<V>) -> bool
+    pub fn lextend<V>(&mut self, name: &str, seq: &Vec<V>) -> Option<PickleDbListExtender>
         where
             V: Serialize
     {
@@ -517,10 +594,10 @@ impl PickleDb {
                 .collect();
                 list.extend(serialized);
                 self.dumpdb();
-                true
+                Some(PickleDbListExtender { db: self, list_name: String::from(name)})
             },
 
-            None => false,
+            None => None,
         }
     }
 

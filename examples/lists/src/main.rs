@@ -44,22 +44,22 @@ fn main() {
     println!("The value of key1 is: {}", db.get::<i32>("key1").unwrap());
 
     // create a new list
-    db.lcreate("list1");
+    db.lcreate("list1")
 
     // add an integer item to the list
-    db.ladd("list1", &200);
+      .ladd(&200)
 
     // add an floating point item to the list
-    db.ladd("list1", &2.1);
+      .ladd(&2.1)
 
     // add a string to the list
-    db.ladd("list1", &String::from("my list"));
+      .ladd(&String::from("my list"))
 
     // add a vector of chars to the list
-    db.ladd("list1", &vec!['a', 'b', 'c']);
+      .ladd(&vec!['a', 'b', 'c'])
 
     // add multiple values to the list: add 3 rectangles 
-    db.lextend("list1", &vec![
+      .lextend(&vec![
         Rectangle { width: 2, length: 4}, 
         Rectangle { width: 10, length: 22},
         Rectangle { width: 1, length: 22}, 

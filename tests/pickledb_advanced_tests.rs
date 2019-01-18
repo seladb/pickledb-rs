@@ -21,12 +21,12 @@ fn lists_and_values() {
     db.set("key3", &vec![1,2,3]);
 
     // create a few lists and add values to them
-    db.lcreate("list1");
-    db.lextend("list1", &vec![1,2,3]);
+    db.lcreate("list1")
+      .lextend(&vec![1,2,3]);
 
-    db.lcreate("list2");
-    db.ladd("list2", &1.1);
-    db.ladd("list2", &String::from("some val"));
+    db.lcreate("list2")
+      .ladd(&1.1)
+      .ladd(&String::from("some val"));
 
     // read keys and lists
     {
@@ -140,14 +140,14 @@ fn load_test() {
                     // randomly choose an element type: [i32, f32, String, Vec]
                     match possible_value_types[..4].choose(&mut rng).unwrap() {
                         1 => { // add a i32 element to the list
-                            assert!(db.ladd(&list_key, &rng.gen::<i32>()))
+                            assert!(db.ladd(&list_key, &rng.gen::<i32>()).is_some());
                         },
                         2 => { // add a f32 element to the list
-                            assert!(db.ladd(&list_key, &rng.gen::<f32>()));
+                            assert!(db.ladd(&list_key, &rng.gen::<f32>()).is_some());
                         }, 
                         3 => { // add a String element to the list
                             let val_size = rng.gen_range(1, 50);
-                            assert!(db.ladd(&list_key, &gen_random_string(&mut rng, val_size)));
+                            assert!(db.ladd(&list_key, &gen_random_string(&mut rng, val_size)).is_some());
                         },
                         4 => { // add a Vec<i32> element to the list
                             // randomize vec size 1..10
@@ -160,7 +160,7 @@ fn load_test() {
                             }
 
                             // add vec as an element to the list
-                            assert!(db.ladd(&list_key, &vec));
+                            assert!(db.ladd(&list_key, &vec).is_some());
                         },
                         _ => panic!("Cannot add list inside a list!"),
                     }
