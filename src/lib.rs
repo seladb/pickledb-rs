@@ -94,7 +94,7 @@
 //! 
 use std::io::Error;
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::fs;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
@@ -307,7 +307,14 @@ impl PickleDb {
 
         match serde_json::to_string(&(&self.map, &self.list_map)) {
             Ok(db_as_json) => {
-                fs::write(&self.db_file_path, &db_as_json).expect("Unable to write file");
+                let temp_file_path = format!("{}.temp.{}", 
+                    self.db_file_path, 
+                    SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs());
+                fs::write(&temp_file_path, &db_as_json).expect("Unable to write to temp file");
+                fs::rename(temp_file_path, &self.db_file_path).expect("Unable to rename file");
                 if let PickleDbDumpPolicy::PeriodicDump(_dur) = self.dump_policy {
                     self.last_dump = Instant::now();
                 }
