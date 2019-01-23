@@ -38,7 +38,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-pickledb = "*"
+pickledb = "0.2.0"
 ```
 
 ## Documentation
