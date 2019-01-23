@@ -28,6 +28,7 @@
 //! * Manage lists. Every list has a name (which is its key in the key-value store) and a list of items it stores. PickleDB provides APIs to 
 //!   create and delete lists and to add or remove items from them. Lists are also heterogeneous, meaning each list can store objects of different 
 //!   types. Please see more details below
+//! * Iterate over keys and values in the DB and over items in a list
 //! 
 //! Please take a look at the API documentation to get more details.
 //! 
@@ -97,7 +98,13 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::fs;
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json;
+
+use crate::serialization::{serialize_data, deserialize_data};
+
+pub use self::iterators::{PickleDbIterator, PickleDbIteratorItem, PickleDbListIterator, PickleDbListIteratorItem};
+
+mod iterators;
+mod serialization;
 
 /// An enum that determines the policy of dumping PickleDB changes into the file 
 pub enum PickleDbDumpPolicy {
@@ -258,7 +265,7 @@ impl PickleDb {
     /// ```
     pub fn load(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
         let contents = fs::read_to_string(location)?;
-        let map_from_file: (_,_) = serde_json::from_str(&contents)?;
+        let map_from_file: (_,_) = deserialize_data(&contents).unwrap();
         Ok(PickleDb { 
             map: map_from_file.0, 
             list_map: map_from_file.1, 
@@ -305,7 +312,7 @@ impl PickleDb {
             return true
         }
 
-        match serde_json::to_string(&(&self.map, &self.list_map)) {
+        match serialize_data(&(&self.map, &self.list_map)) {
             Ok(db_as_json) => {
                 let temp_file_path = format!("{}.temp.{}", 
                     self.db_file_path, 
@@ -384,7 +391,7 @@ impl PickleDb {
         if self.list_map.contains_key(key) {
             self.list_map.remove(key);
         }
-        self.map.insert(String::from(key), serde_json::to_string(value).unwrap());
+        self.map.insert(String::from(key), serialize_data(value).unwrap());
         self.dumpdb();
     }
 
@@ -425,11 +432,7 @@ impl PickleDb {
             V: DeserializeOwned
     {
         match self.map.get(key) {
-            Some(val_as_string) => match serde_json::from_str(&val_as_string) {
-                Ok(val) => Some(val),
-                Err(_) => None
-            },
-            
+            Some(val_as_string) => deserialize_data::<V>(&val_as_string),
             None => None,
         }
     }
@@ -597,7 +600,7 @@ impl PickleDb {
         match self.list_map.get_mut(name) {
             Some(list) => {
                 let serialized: Vec<String> = seq.iter()
-                .map(|x| serde_json::to_string(x).unwrap())
+                .map(|x| serialize_data(x).unwrap())
                 .collect();
                 list.extend(serialized);
                 self.dumpdb();
@@ -646,10 +649,7 @@ impl PickleDb {
     {
         match self.list_map.get(name) {
             Some(list) => match list.get(pos) {
-                Some(val_as_string) => match serde_json::from_str(&val_as_string) {
-                    Ok(val) => Some(val),
-                    Err(_) => None,
-                }
+                Some(val_as_string) => deserialize_data::<V>(&val_as_string),
                 None => None,
             }
             None => None,
@@ -738,10 +738,7 @@ impl PickleDb {
                 if pos < list.len() {
                     let res = list.remove(pos);
                     self.dumpdb();
-                    match serde_json::from_str(&res) {
-                        Ok(val) => Some(val),
-                        Err(_) => None,
-                    }
+                    deserialize_data(&res)
                 } else {
                     None
                 }
@@ -792,7 +789,7 @@ impl PickleDb {
     {
         match self.list_map.get_mut(name) {
             Some(list) => {
-                let serialized_value = serde_json::to_string(&value).unwrap();
+                let serialized_value = serialize_data(&value).unwrap();
                 match list.iter().position(|x| *x == serialized_value) {
                     Some(pos) => {
                         list.remove(pos);
@@ -805,6 +802,53 @@ impl PickleDb {
             },
 
             None => false,
+        }
+    }
+
+    /// Return an iterator over the keys and values in the DB.
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust,ignore
+    /// // iterate over all keys and values in the db
+    /// for kv in db.iter() {
+    ///     match kv.get_key() {
+    ///         "key1" => println!("Value of {} is: {}", kv.get_key(), kv.get_value::<String>().unwrap()),
+    ///         "key2" => println!("Value of {} is: {}", kv.get_key(), kv.get_value::<String>().unwrap()),
+    ///         "key3" => println!("Value of {} is: {:?}", kv.get_key(), kv.get_value::<Vec<i32>>().unwrap()),
+    ///         "key4" => println!("Value of {} is: {}", kv.get_key(), kv.get_value::<Rectangle>().unwrap()),
+    ///         _ => ()
+    ///     }
+    /// }
+    /// ```
+    /// 
+    pub fn iter(&self) -> PickleDbIterator {
+        PickleDbIterator { map_iter: self.map.iter() }
+    }
+
+    /// Return an iterator over the items in certain list.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `name` - the list name. If the list doesn't exist an exception is thrown
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust,ignore
+    /// // create a new list
+    /// db.lcreate("list1")
+    ///   .lextend(&vec![1,2,3,4]);
+    /// 
+    /// // iterate over the items in list1
+    /// for item_iter in db.liter("list1") {
+    ///     println!("Current item is: {}", item_iter.get_item::<i32>().unwrap());
+    /// }
+    /// ```
+    /// 
+    pub fn liter(&self, name: &str) -> PickleDbListIterator {
+        match self.list_map.get(name) {
+            Some(list) => PickleDbListIterator { list_iter: list.iter() },
+            None => panic!("List '{}' doesn't exist", name)
         }
     }
 }

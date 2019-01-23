@@ -311,3 +311,43 @@ fn rem_keys() {
     assert_eq!(read_db.total_keys(), 8);
 }
 
+#[test]
+fn iter_test() {
+    set_test_rsc!("iter_test.db");
+
+    // create a db with auto_dump == true
+    let mut db = PickleDb::new("iter_test.db", PickleDbDumpPolicy::AutoDump);
+
+    let keys = vec!["key1", "key2", "key3", "key4", "key5"];
+    // add a few keys and values
+    db.set(keys[0], &1);
+    db.set(keys[1], &1.1);
+    db.set(keys[2], &String::from("value1"));
+    db.set(keys[3], &vec![1,2,3]);
+    db.set(keys[4], &('a', 'b', 'c'));
+
+    // iterate the db
+    let mut keys_seen = vec![false, false, false, false, false];
+    for key_value in db.iter() {
+
+        // find the index of the current key in the keys vec
+        let index = keys.iter().position(|&k| k == key_value.get_key()).unwrap();
+
+        // mark the key as seen
+        keys_seen[index] = true;
+
+        // verify the value
+        match key_value.get_key() {
+            "key1" => assert_eq!(key_value.get_value::<i32>().unwrap(), 1),
+            "key2" => assert_eq!(key_value.get_value::<f32>().unwrap(), 1.1),
+            "key3" => assert_eq!(key_value.get_value::<String>().unwrap(), String::from("value1")),
+            "key4" => assert_eq!(key_value.get_value::<Vec<i32>>().unwrap(), vec![1,2,3]),
+            "key5" => assert_eq!(key_value.get_value::<(char, char, char)>().unwrap(), ('a', 'b', 'c')),
+            _ => assert!(false)
+        }
+    }
+
+    // verify all 5 keys were seen
+    assert_eq!(keys_seen.iter().filter(|&t| *t == true).count(), 5);
+}
+

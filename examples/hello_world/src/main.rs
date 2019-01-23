@@ -78,4 +78,16 @@ fn main() {
 
     // print the value of key1
     println!("Value of key1 as loaded from file is: {}", db2.get::<String>("key1").unwrap());
+
+
+    // iterate over all keys and values in the db
+    for kv in db.iter() {
+        match kv.get_key() {
+            "key1" => println!("Value of {} is: {}", kv.get_key(), kv.get_value::<String>().unwrap()),
+            "key3" => println!("Value of {} is: {}", kv.get_key(), kv.get_value::<String>().unwrap()),
+            "key4" => println!("Value of {} is: {:?}", kv.get_key(), kv.get_value::<Vec<i32>>().unwrap()),
+            "key5" => println!("Value of {} is: {}", kv.get_key(), kv.get_value::<Rectangle>().unwrap()),
+            _ => ()
+        }
+    }
 }

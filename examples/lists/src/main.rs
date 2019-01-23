@@ -88,4 +88,14 @@ fn main() {
 
     // was list1 removed?
     println!("list1 was removed. Is it still in the db? {}", db.lexists("list1"));
+
+
+    // create a new list
+    db.lcreate("list2")
+      .lextend(&vec![1,2,3,4]);
+
+    // iterate over the items in list2
+    for item_iter in db.liter("list2") {
+        println!("Current item is: {}", item_iter.get_item::<i32>().unwrap());
+    }
 }

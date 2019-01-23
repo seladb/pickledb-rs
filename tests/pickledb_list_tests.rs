@@ -433,3 +433,64 @@ fn list_with_special_strings() {
     assert_eq!(read_db.lget::<String>("list1", 4).unwrap(), String::from("\nescapes\t\r"));
     assert_eq!(read_db.lget::<String>("list1", 5).unwrap(), String::from("my\\folder"));
 }
+
+#[test]
+fn list_iter_test() {
+    set_test_rsc!("list_iter_test.db");
+
+    // create a db with auto_dump == true
+    let mut db = PickleDb::new("list_iter_test.db", PickleDbDumpPolicy::AutoDump);
+
+    let values = (1, 1.1, String::from("value"), vec![1,2,3], ('a', 'b', 'c'));
+
+    // create a list with some values
+    db.lcreate("list1")
+      .ladd(&values.0)
+      .ladd(&values.1)
+      .ladd(&values.2)
+      .ladd(&values.3)
+      .ladd(&values.4);
+
+    let mut index = 0;
+
+    // iterate over the list
+    for item in db.liter("list1") {
+        // check each item
+        match index {
+            0 => assert_eq!(item.get_item::<i32>().unwrap(), values.0),
+            1 => assert_eq!(item.get_item::<f32>().unwrap(), values.1),
+            2 => assert_eq!(item.get_item::<String>().unwrap(), values.2),
+            3 => assert_eq!(item.get_item::<Vec<i32>>().unwrap(), values.3),
+            4 => assert_eq!(item.get_item::<(char, char, char)>().unwrap(), values.4),
+            _ => assert!(false)
+        }
+        index += 1;
+    }
+
+    // verify iterator went over all the items
+    assert_eq!(index, 5);
+}
+
+#[test]
+#[should_panic]
+fn list_doesnt_exist_iter_test() {
+    set_test_rsc!("list_doesnt_exist_iter_test.db");
+
+    // create a db with auto_dump == true
+    let mut db = PickleDb::new("list_doesnt_exist_iter_test.db", PickleDbDumpPolicy::AutoDump);
+
+    let values = (1, 1.1, String::from("value"), vec![1,2,3], ('a', 'b', 'c'));
+
+    // create a list with some values
+    db.lcreate("list1")
+      .ladd(&values.0)
+      .ladd(&values.1)
+      .ladd(&values.2)
+      .ladd(&values.3)
+      .ladd(&values.4);
+
+    // iterate over a non-existent list - should panic here
+    for _item in db.liter("list2") {
+
+    }
+}
