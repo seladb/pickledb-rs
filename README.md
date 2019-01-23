@@ -53,3 +53,13 @@ There are currently two examples shipped with PickleDB:
   create a new DB, load a DB from file, get/set key-value pairs of different types, and more
 * [Lists](https://github.com/seladb/pickledb-rs/tree/master/examples/lists) which shows how to use lists in PickleDB: 
   create new lists, add/remove items from lists, retrieve items from lists, remove lists, and more
+
+## Changelog
+
+__Version 0.2.0__
+
+* Dump the DB to file in a crash-safe manner using a temp file (Thanks jamwt from Reddit
+  for the tip: https://www.reddit.com/r/rust/comments/agumun/check_out_pickledb_a_lightweight_and_simple/ee987j0)
+* Extend lists became easier and multiple calls to lcreate(), ladd() and lextend() can be chained
+* Added an iterator over keys and values in the DB
+* Added an iterator over items in a list
