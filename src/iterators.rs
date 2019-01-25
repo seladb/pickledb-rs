@@ -2,11 +2,12 @@ use std::collections::hash_map;
 use std::slice;
 use serde::{de::DeserializeOwned};
 
-use crate::serialization::deserialize_data;
+use crate::serialization::Serializer;
 
 /// Iterator object for iterating over keys and values in PickleDB. Returned in [PickleDb::iter()](struct.PickleDb.html#method.iter)
 pub struct PickleDbIterator<'a> {
-    pub(crate) map_iter: hash_map::Iter<'a, String, String>
+    pub(crate) map_iter: hash_map::Iter<'a, String, Vec<u8>>,
+    pub(crate) serializer: &'a Serializer
 }
 
 impl<'a> Iterator for PickleDbIterator<'a> {
@@ -14,7 +15,7 @@ impl<'a> Iterator for PickleDbIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.map_iter.next() {
-            Some((key, value_as_string)) => Some(PickleDbIteratorItem { key: key, value_as_string: value_as_string}),
+            Some((key, value)) => Some(PickleDbIteratorItem { key: key, value: value, serializer: self.serializer }),
             None => None
         }
     }
@@ -23,7 +24,8 @@ impl<'a> Iterator for PickleDbIterator<'a> {
 /// The object returned in each iteration when iterating over keys and values in PickleDB
 pub struct PickleDbIteratorItem<'a> {
     key: &'a str,
-    value_as_string: &'a str,
+    value: &'a Vec<u8>,
+    serializer: &'a Serializer
 }
 
 impl<'a> PickleDbIteratorItem<'a> {
@@ -44,13 +46,14 @@ impl<'a> PickleDbIteratorItem<'a> {
     /// The method returns `Some(V)` if deserialization succeeds or `None` otherwise.
     /// 
     pub fn get_value<V>(&self) -> Option<V> where V: DeserializeOwned {
-        deserialize_data::<V>(self.value_as_string)
+        self.serializer.deserialize_data::<V>(self.value)
     }
 }
 
 /// Iterator object for iterating over items in a PickleDB list. Returned in [PickleDb::liter()](struct.PickleDb.html#method.liter)
 pub struct PickleDbListIterator<'a> {
-    pub(crate) list_iter: slice::Iter<'a, String>
+    pub(crate) list_iter: slice::Iter<'a, Vec<u8>>,
+    pub(crate) serializer: &'a Serializer
 }
 
 impl<'a> Iterator for PickleDbListIterator<'a> {
@@ -58,15 +61,16 @@ impl<'a> Iterator for PickleDbListIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.list_iter.next() {
-            Some(value_as_string) => Some(PickleDbListIteratorItem { value_as_string: value_as_string }),
+            Some(value) => Some(PickleDbListIteratorItem { value: value, serializer: self.serializer }),
             None => None
         }
     }
 }
 
-/// The object returned in each iteration when iterating over PickleDB list
+/// The object returned in each iteration when iterating over a PickleDB list
 pub struct PickleDbListIteratorItem<'a> {
-    value_as_string: &'a str,
+    value: &'a Vec<u8>,
+    serializer: &'a Serializer
 }
 
 impl<'a> PickleDbListIteratorItem<'a> {
@@ -80,6 +84,6 @@ impl<'a> PickleDbListIteratorItem<'a> {
     /// The method returns `Some(V)` if deserialization succeeds or `None` otherwise.
     /// 
     pub fn get_item<V>(&self) -> Option<V> where V: DeserializeOwned {
-        deserialize_data(self.value_as_string)
+        self.serializer.deserialize_data(self.value)
     }
 }

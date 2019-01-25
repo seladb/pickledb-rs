@@ -99,7 +99,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::fs;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::serialization::{serialize_data, deserialize_data};
+use crate::serialization::{SerializationMethod, Serializer};
 
 pub use self::iterators::{PickleDbIterator, PickleDbIteratorItem, PickleDbListIterator, PickleDbListIteratorItem};
 
@@ -201,8 +201,9 @@ impl<'a> PickleDbListExtender<'a> {
 
 /// A struct that represents a PickleDB object
 pub struct PickleDb {
-    map: HashMap<String, String>, 
-    list_map: HashMap<String, Vec<String>>,
+    map: HashMap<String, Vec<u8>>, 
+    list_map: HashMap<String, Vec<Vec<u8>>>,
+    serializer: Serializer,
     db_file_path: String,
     dump_policy: PickleDbDumpPolicy,
     last_dump: Instant
@@ -228,7 +229,8 @@ impl PickleDb {
     pub fn new(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb { 
             map: HashMap::new(), 
-            list_map: HashMap::new(), 
+            list_map: HashMap::new(),
+            serializer: Serializer::new(SerializationMethod::Json),
             db_file_path: String::from(location), 
             dump_policy: dump_policy,
             last_dump: Instant::now() }
@@ -264,11 +266,13 @@ impl PickleDb {
     /// let db = PickleDB::load("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     pub fn load(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
-        let contents = fs::read_to_string(location)?;
-        let map_from_file: (_,_) = deserialize_data(&contents).unwrap();
+        let content = fs::read(location)?;
+        let serializer = Serializer::new(SerializationMethod::Json);
+        let maps_from_file: (_,_) = serializer.deserialize_db(&content).unwrap();
         Ok(PickleDb { 
-            map: map_from_file.0, 
-            list_map: map_from_file.1, 
+            map: maps_from_file.0, 
+            list_map: maps_from_file.1, 
+            serializer: serializer,
             db_file_path: String::from(location), 
             dump_policy: dump_policy,
             last_dump: Instant::now()
@@ -312,15 +316,15 @@ impl PickleDb {
             return true
         }
 
-        match serialize_data(&(&self.map, &self.list_map)) {
-            Ok(db_as_json) => {
+        match self.serializer.serialize_db(&self.map, &self.list_map) {
+            Ok(ser_db) => {
                 let temp_file_path = format!("{}.temp.{}", 
                     self.db_file_path, 
                     SystemTime::now()
                         .duration_since(UNIX_EPOCH)
                         .unwrap()
                         .as_secs());
-                fs::write(&temp_file_path, &db_as_json).expect("Unable to write to temp file");
+                fs::write(&temp_file_path, ser_db).expect("Unable to write to temp file");
                 fs::rename(temp_file_path, &self.db_file_path).expect("Unable to rename file");
                 if let PickleDbDumpPolicy::PeriodicDump(_dur) = self.dump_policy {
                     self.last_dump = Instant::now();
@@ -391,7 +395,7 @@ impl PickleDb {
         if self.list_map.contains_key(key) {
             self.list_map.remove(key);
         }
-        self.map.insert(String::from(key), serialize_data(value).unwrap());
+        self.map.insert(String::from(key), self.serializer.serialize_data(value).unwrap());
         self.dumpdb();
     }
 
@@ -432,7 +436,7 @@ impl PickleDb {
             V: DeserializeOwned
     {
         match self.map.get(key) {
-            Some(val_as_string) => deserialize_data::<V>(&val_as_string),
+            Some(val) => self.serializer.deserialize_data::<V>(&val),
             None => None,
         }
     }
@@ -502,7 +506,7 @@ impl PickleDb {
     /// * `name` - the key of the list that will be created
     /// 
     pub fn lcreate(&mut self, name: &str) -> PickleDbListExtender {
-        let new_list: Vec<String> = Vec::new();
+        let new_list: Vec<Vec<u8>> = Vec::new();
         if self.map.contains_key(name) {
             self.map.remove(name);
         }
@@ -597,10 +601,11 @@ impl PickleDb {
         where
             V: Serialize
     {
+        let serializer = &self.serializer;
         match self.list_map.get_mut(name) {
             Some(list) => {
-                let serialized: Vec<String> = seq.iter()
-                .map(|x| serialize_data(x).unwrap())
+                let serialized: Vec<Vec<u8>> = seq.iter()
+                .map(|x| serializer.serialize_data(x).unwrap())
                 .collect();
                 list.extend(serialized);
                 self.dumpdb();
@@ -649,7 +654,7 @@ impl PickleDb {
     {
         match self.list_map.get(name) {
             Some(list) => match list.get(pos) {
-                Some(val_as_string) => deserialize_data::<V>(&val_as_string),
+                Some(val) => self.serializer.deserialize_data::<V>(&val),
                 None => None,
             }
             None => None,
@@ -738,7 +743,7 @@ impl PickleDb {
                 if pos < list.len() {
                     let res = list.remove(pos);
                     self.dumpdb();
-                    deserialize_data(&res)
+                    self.serializer.deserialize_data(&res)
                 } else {
                     None
                 }
@@ -789,7 +794,7 @@ impl PickleDb {
     {
         match self.list_map.get_mut(name) {
             Some(list) => {
-                let serialized_value = serialize_data(&value).unwrap();
+                let serialized_value = self.serializer.serialize_data(&value).unwrap();
                 match list.iter().position(|x| *x == serialized_value) {
                     Some(pos) => {
                         list.remove(pos);
@@ -823,7 +828,7 @@ impl PickleDb {
     /// ```
     /// 
     pub fn iter(&self) -> PickleDbIterator {
-        PickleDbIterator { map_iter: self.map.iter() }
+        PickleDbIterator { map_iter: self.map.iter(), serializer: &self.serializer }
     }
 
     /// Return an iterator over the items in certain list.
@@ -847,7 +852,7 @@ impl PickleDb {
     /// 
     pub fn liter(&self, name: &str) -> PickleDbListIterator {
         match self.list_map.get(name) {
-            Some(list) => PickleDbListIterator { list_iter: list.iter() },
+            Some(list) => PickleDbListIterator { list_iter: list.iter(), serializer: &self.serializer },
             None => panic!("List '{}' doesn't exist", name)
         }
     }
