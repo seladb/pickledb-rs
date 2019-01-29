@@ -3,11 +3,13 @@ use std::fmt;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
 use bincode;
+use serde_yaml;
 
 #[derive(Debug)]
 pub enum SerializationMethod {
     Json,
-    Bin
+    Bin,
+    Yaml
 }
 
 impl From<i32> for SerializationMethod {
@@ -15,7 +17,8 @@ impl From<i32> for SerializationMethod {
         match item {
             0 => SerializationMethod::Json,
             1 => SerializationMethod::Bin,
-            _ => SerializationMethod::Bin
+            2 => SerializationMethod::Yaml,
+            _ => SerializationMethod::Json
         }
     }
 }
@@ -95,6 +98,74 @@ impl JsonSerializer {
 }
 
 
+struct YamlSerializer { }
+
+impl YamlSerializer {
+    fn new() -> YamlSerializer {
+        YamlSerializer {}
+    }
+
+    fn deserialize_data<V>(&self, ser_data: &[u8]) -> Option<V> 
+        where 
+            V: DeserializeOwned    
+    {
+        match serde_yaml::from_str(std::str::from_utf8(ser_data).unwrap()) {
+            Ok(val) => Some(val),
+            Err(_) => None
+        }
+    }
+
+    fn serialize_data<V>(&self, data: &V) -> Result<Vec<u8>, String>
+            where
+                V: Serialize
+    {
+        match serde_yaml::to_string(data) {
+            Ok(ser_data) => Ok(ser_data.into_bytes()),
+            Err(err) => Err(err.to_string())
+        }
+    }
+
+    fn serialize_db(&self, map: &HashMap<String, Vec<u8>>, list_map: &HashMap<String, Vec<Vec<u8>>>) -> Result<Vec<u8>, String>{
+        let mut yaml_map: HashMap<&str, &str> = HashMap::new();
+        for (key, value) in map.iter() {
+            yaml_map.insert(key, std::str::from_utf8(value).unwrap());
+        }
+
+        let mut yaml_list_map: HashMap<&str, Vec<&str>> = HashMap::new();
+        for (key, list) in list_map.iter() {
+            let yaml_list: Vec<&str> = list.iter().map(|item| std::str::from_utf8(item).unwrap()).collect();
+            yaml_list_map.insert(key, yaml_list);
+        }
+
+        match serde_yaml::to_string(&(yaml_map, yaml_list_map)) {
+            Ok(ser_db) => Ok(ser_db.into_bytes()),
+            Err(err) => Err(err.to_string())
+        }
+    }
+
+    fn deserialize_db(&self, ser_db: &[u8]) -> Result<(HashMap<String, Vec<u8>>, HashMap<String, Vec<Vec<u8>>>), String> {
+        match serde_yaml::from_str::<(HashMap<String, String>, HashMap<String, Vec<String>>)>(std::str::from_utf8(ser_db).unwrap()) {
+            Ok((yaml_map, yaml_list_map)) => {
+                let mut byte_map: HashMap<String, Vec<u8>> = HashMap::new();
+                for (key, value) in yaml_map.iter() {
+                    byte_map.insert(key.to_string(), value.as_bytes().to_vec());
+                }
+
+                let mut byte_list_map: HashMap<String, Vec<Vec<u8>>> = HashMap::new();
+                for (key, list) in yaml_list_map.iter() {
+                    let byte_list: Vec<Vec<u8>> = list.iter().map(|item| item.as_bytes().to_vec()).collect();
+                    byte_list_map.insert(key.to_string(), byte_list);
+                }
+
+                Ok((byte_map, byte_list_map))
+            },
+
+            Err(err) => Err(err.to_string())
+        }
+    }
+}
+
+
 struct BincodeSerializer { }
 
 impl BincodeSerializer {
@@ -138,7 +209,8 @@ impl BincodeSerializer {
 pub(crate) struct Serializer {
     ser_method: SerializationMethod,
     json_serializer: JsonSerializer,
-    bincode_serializer: BincodeSerializer
+    bincode_serializer: BincodeSerializer,
+    yaml_serializer: YamlSerializer
 }
 
 impl Serializer {
@@ -147,7 +219,8 @@ impl Serializer {
         Serializer {
             ser_method: ser_method,
             json_serializer: JsonSerializer::new(),
-            bincode_serializer: BincodeSerializer::new()
+            bincode_serializer: BincodeSerializer::new(),
+            yaml_serializer: YamlSerializer::new()
         }
 
     }
@@ -158,7 +231,8 @@ impl Serializer {
     {
         match self.ser_method {
             SerializationMethod::Json => self.json_serializer.deserialize_data(ser_data),
-            SerializationMethod::Bin => self.bincode_serializer.deserialize_data(ser_data)
+            SerializationMethod::Bin => self.bincode_serializer.deserialize_data(ser_data),
+            SerializationMethod::Yaml => self.yaml_serializer.deserialize_data(ser_data)
         }
     }
 
@@ -168,21 +242,24 @@ impl Serializer {
     {
         match self.ser_method {
             SerializationMethod::Json => self.json_serializer.serialize_data(data),
-            SerializationMethod::Bin => self.bincode_serializer.serialize_data(data)
+            SerializationMethod::Bin => self.bincode_serializer.serialize_data(data),
+            SerializationMethod::Yaml => self.yaml_serializer.serialize_data(data)
         }
     }
 
     pub(crate) fn serialize_db(&self, map: &HashMap<String, Vec<u8>>, list_map: &HashMap<String, Vec<Vec<u8>>>) -> Result<Vec<u8>, String> {
         match self.ser_method {
             SerializationMethod::Json => self.json_serializer.serialize_db(map, list_map),
-            SerializationMethod::Bin => self.bincode_serializer.serialize_db(map, list_map)
+            SerializationMethod::Bin => self.bincode_serializer.serialize_db(map, list_map),
+            SerializationMethod::Yaml => self.yaml_serializer.serialize_db(map, list_map),
         }
     }
 
     pub(crate) fn deserialize_db(&self, ser_db: &[u8]) -> Result<(HashMap<String, Vec<u8>>, HashMap<String, Vec<Vec<u8>>>), String> {
         match self.ser_method {
             SerializationMethod::Json => self.json_serializer.deserialize_db(ser_db),
-            SerializationMethod::Bin => self.bincode_serializer.deserialize_db(ser_db)
+            SerializationMethod::Bin => self.bincode_serializer.deserialize_db(ser_db),
+            SerializationMethod::Yaml => self.yaml_serializer.deserialize_db(ser_db)
         }
     }
 }

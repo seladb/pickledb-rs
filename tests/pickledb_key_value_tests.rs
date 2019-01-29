@@ -13,7 +13,8 @@ use rstest::rstest_parametrize;
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn basic_set_get(ser_method_int: i32) {
     test_setup!("basic_set_get", ser_method_int, db_name);
@@ -64,7 +65,8 @@ fn basic_set_get(ser_method_int: i32) {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn set_load_get(ser_method_int: i32) {
     test_setup!("set_load_get", ser_method_int, db_name);
@@ -122,7 +124,8 @@ fn set_load_get(ser_method_int: i32) {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn set_load_get_auto_dump(ser_method_int: i32) {
     test_setup!("set_load_get_auto_dump", ser_method_int, db_name);
@@ -175,7 +178,8 @@ fn set_load_get_auto_dump(ser_method_int: i32) {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn set_load_get_auto_dump2(ser_method_int: i32) {
     test_setup!("set_load_get_auto_dump2", ser_method_int, db_name);
@@ -232,7 +236,8 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn set_special_strings(ser_method_int: i32) {
     test_setup!("set_special_strings", ser_method_int, db_name);
@@ -259,7 +264,8 @@ fn set_special_strings(ser_method_int: i32) {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn edge_cases(ser_method_int: i32) {
     test_setup!("edge_cases", ser_method_int, db_name);
@@ -275,14 +281,20 @@ fn edge_cases(ser_method_int: i32) {
 
     assert_eq!(db.get::<i32>("num"), Some(x));
     assert_eq!(read_db.get::<i32>("num"), Some(x));
-    assert_eq!(db.get::<String>("num"), None);
-    assert_eq!(read_db.get::<String>("num"), None);
+    if let SerializationMethod::Yaml = ser_method!(ser_method_int) {
+        // N/A
+    } else {
+        assert_eq!(db.get::<String>("num"), None);        
+        assert_eq!(read_db.get::<String>("num"), None);
+    }
+
 }
 
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn get_all_keys(ser_method_int: i32) {
     test_setup!("get_all_keys", ser_method_int, db_name);
@@ -314,7 +326,8 @@ fn get_all_keys(ser_method_int: i32) {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn rem_keys(ser_method_int: i32) {
     test_setup!("rem_keys", ser_method_int, db_name);
@@ -353,7 +366,8 @@ fn rem_keys(ser_method_int: i32) {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn iter_test(ser_method_int: i32) {
     test_setup!("iter_test", ser_method_int, db_name);

@@ -12,7 +12,8 @@ use rstest::rstest_parametrize;
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn auto_dump_poilcy_test(ser_method_int: i32) {
     test_setup!("auto_dump_poilcy_test", ser_method_int, db_name);
@@ -88,7 +89,8 @@ fn auto_dump_poilcy_test(ser_method_int: i32) {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn read_only_policy_test(ser_method_int: i32) {
     test_setup!("read_only_policy_test", ser_method_int, db_name);
@@ -135,7 +137,8 @@ fn read_only_policy_test(ser_method_int: i32) {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn dump_upon_request_policy_test(ser_method_int: i32) {
     test_setup!("dump_upon_request_policy_test", ser_method_int, db_name);
@@ -173,7 +176,8 @@ fn dump_upon_request_policy_test(ser_method_int: i32) {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn periodic_dump_policy_test(ser_method_int: i32) {
     test_setup!("periodic_dump_policy_test", ser_method_int, db_name);

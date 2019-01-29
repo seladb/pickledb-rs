@@ -239,6 +239,11 @@ impl PickleDb {
     }
 
     /// TODO: fix doc
+    pub fn new_yaml(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
+        PickleDb::new(location, dump_policy, SerializationMethod::Yaml)
+    }
+
+    /// TODO: fix doc
     pub fn new(location: &str, dump_policy: PickleDbDumpPolicy, serialization_method: SerializationMethod) -> PickleDb {
         PickleDb { 
             map: HashMap::new(), 
@@ -302,6 +307,11 @@ impl PickleDb {
     /// TODO: fix doc
     pub fn load_bin(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
         PickleDb::load(location, dump_policy, SerializationMethod::Bin)
+    }
+
+    /// TODO: fix doc
+    pub fn load_yaml(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
+        PickleDb::load(location, dump_policy, SerializationMethod::Yaml)
     }
 
     /// Load a DB from a file in read-only mode.

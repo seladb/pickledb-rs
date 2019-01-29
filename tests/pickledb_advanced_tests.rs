@@ -17,7 +17,8 @@ use rstest::rstest_parametrize;
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn lists_and_values(ser_method_int: i32) {
     test_setup!("lists_and_values", ser_method_int, db_name);
@@ -76,7 +77,8 @@ fn gen_random_string<T: Rng>(rng: &mut T, size: usize) -> String {
 #[rstest_parametrize(
     ser_method_int,
     case(0),
-    case(1)
+    case(1),
+    case(2)
 )]
 fn load_test(ser_method_int: i32) {
     test_setup!("load_test", ser_method_int, db_name);
