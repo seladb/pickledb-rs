@@ -99,8 +99,9 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::fs;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::serialization::{SerializationMethod, Serializer};
+use crate::serialization::Serializer;
 
+pub use crate::serialization::SerializationMethod;
 pub use self::iterators::{PickleDbIterator, PickleDbIteratorItem, PickleDbListIterator, PickleDbListIteratorItem};
 
 mod iterators;
@@ -226,11 +227,23 @@ impl PickleDb {
     /// 
     /// let mut db = PickleDB::new("example.db", false);
     /// ```
-    pub fn new(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
+    /// 
+    /// TODO: fix doc
+    pub fn new_json(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
+        PickleDb::new(location, dump_policy, SerializationMethod::Json)
+    }
+
+    /// TODO: fix doc
+    pub fn new_bin(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
+        PickleDb::new(location, dump_policy, SerializationMethod::Bin)
+    }
+
+    /// TODO: fix doc
+    pub fn new(location: &str, dump_policy: PickleDbDumpPolicy, serialization_method: SerializationMethod) -> PickleDb {
         PickleDb { 
             map: HashMap::new(), 
             list_map: HashMap::new(),
-            serializer: Serializer::new(SerializationMethod::Json),
+            serializer: Serializer::new(serialization_method),
             db_file_path: String::from(location), 
             dump_policy: dump_policy,
             last_dump: Instant::now() }
@@ -265,9 +278,11 @@ impl PickleDb {
     /// 
     /// let db = PickleDB::load("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
-    pub fn load(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
+    /// 
+    /// TODO: fix doc
+    pub fn load(location: &str, dump_policy: PickleDbDumpPolicy, serialization_method: SerializationMethod) -> Result<PickleDb, Error> {
         let content = fs::read(location)?;
-        let serializer = Serializer::new(SerializationMethod::Json);
+        let serializer = Serializer::new(serialization_method);
         let maps_from_file: (_,_) = serializer.deserialize_db(&content).unwrap();
         Ok(PickleDb { 
             map: maps_from_file.0, 
@@ -277,6 +292,16 @@ impl PickleDb {
             dump_policy: dump_policy,
             last_dump: Instant::now()
             })
+    }
+
+    /// TODO: fix doc
+    pub fn load_json(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
+        PickleDb::load(location, dump_policy, SerializationMethod::Json)
+    }
+
+    /// TODO: fix doc
+    pub fn load_bin(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
+        PickleDb::load(location, dump_policy, SerializationMethod::Bin)
     }
 
     /// Load a DB from a file in read-only mode.
@@ -301,8 +326,10 @@ impl PickleDb {
     /// readonly_db.dump();
     /// ```
     /// 
-    pub fn load_read_only(location: &str) -> Result<PickleDb, Error> {
-        PickleDb::load(location, PickleDbDumpPolicy::NeverDump)
+    /// 
+    /// TODO: fix doc
+    pub fn load_read_only(location: &str, serialization_method: SerializationMethod) -> Result<PickleDb, Error> {
+        PickleDb::load(location, PickleDbDumpPolicy::NeverDump, serialization_method)
     }
 
     /// Dump the data to the file.

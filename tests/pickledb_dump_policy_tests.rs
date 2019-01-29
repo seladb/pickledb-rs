@@ -1,22 +1,31 @@
-use pickledb::{PickleDb, PickleDbDumpPolicy};
+use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 use std::time::Duration;
 use std::{thread, time};
 
 mod common;
 
-#[test]
-fn auto_dump_poilcy_test() {
-    set_test_rsc!("auto_dump_poilcy_test.db");
+#[cfg(test)]
+extern crate rstest;
+
+use rstest::rstest_parametrize;
+
+#[rstest_parametrize(
+    ser_method_int,
+    case(0),
+    case(1)
+)]
+fn auto_dump_poilcy_test(ser_method_int: i32) {
+    test_setup!("auto_dump_poilcy_test", ser_method_int, db_name);
 
     // create a DB with AutoDump policy
-    let mut db = PickleDb::new("auto_dump_poilcy_test.db", PickleDbDumpPolicy::AutoDump);
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
 
     // set a key-value pair
     db.set("key1", &1);
 
     // verify the change in the DB
     {
-        let read_db = PickleDb::load_read_only("auto_dump_poilcy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert_eq!(read_db.get::<i32>("key1").unwrap(), 1);
     }
 
@@ -25,7 +34,7 @@ fn auto_dump_poilcy_test() {
 
     // verify the change in the DB
     {
-        let read_db = PickleDb::load_read_only("auto_dump_poilcy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db.get::<i32>("key1").is_none());
     }
 
@@ -34,7 +43,7 @@ fn auto_dump_poilcy_test() {
 
     // verify the change in the DB
     {
-        let read_db = PickleDb::load_read_only("auto_dump_poilcy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db.exists("list1"));
         assert_eq!(read_db.llen("list1"), 0);
     }
@@ -44,7 +53,7 @@ fn auto_dump_poilcy_test() {
 
     // verify the change in the DB
     {
-        let read_db = PickleDb::load_read_only("auto_dump_poilcy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert_eq!(read_db.llen("list1"), 3);
     }
 
@@ -53,7 +62,7 @@ fn auto_dump_poilcy_test() {
 
     // verify the change in the DB
     {
-        let read_db = PickleDb::load_read_only("auto_dump_poilcy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert_eq!(read_db.llen("list1"), 2);
     }
 
@@ -62,7 +71,7 @@ fn auto_dump_poilcy_test() {
 
     // verify the change in the DB
     {
-        let read_db = PickleDb::load_read_only("auto_dump_poilcy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert_eq!(read_db.llen("list1"), 1);
     }
 
@@ -71,21 +80,25 @@ fn auto_dump_poilcy_test() {
 
     // verify the change in the DB
     {
-        let read_db = PickleDb::load_read_only("auto_dump_poilcy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(!read_db.exists("list1"));
     }
 }
 
-#[test]
-fn read_only_policy_test() {
-    set_test_rsc!("read_only_policy_test.db");
+#[rstest_parametrize(
+    ser_method_int,
+    case(0),
+    case(1)
+)]
+fn read_only_policy_test(ser_method_int: i32) {
+    test_setup!("read_only_policy_test", ser_method_int, db_name);
 
     // create a DB and set a value
-    let mut db = PickleDb::new("read_only_policy_test.db", PickleDbDumpPolicy::AutoDump);
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
     db.set("key1", &String::from("value1"));
 
     // create a read only instance of the same DB
-    let mut read_db1 = PickleDb::load_read_only("read_only_policy_test.db").unwrap();
+    let mut read_db1 = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
 
     // set a key-value pair in the read-only DB
     read_db1.set("key2", &String::from("value2"));
@@ -93,7 +106,7 @@ fn read_only_policy_test() {
 
     // verify the change isn't dumped to the file
     {
-        let read_db2 = PickleDb::load_read_only("read_only_policy_test.db").unwrap();
+        let read_db2 = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db2.exists("key1"));
         assert!(!read_db2.exists("key2"));
     }
@@ -103,7 +116,7 @@ fn read_only_policy_test() {
 
     // verify the change isn't dumped to the file
     {
-        let read_db2 = PickleDb::load_read_only("read_only_policy_test.db").unwrap();
+        let read_db2 = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db2.exists("key1"));
         assert!(!read_db2.exists("key2"));
     }
@@ -113,29 +126,33 @@ fn read_only_policy_test() {
 
     // verify the change isn't dumped to the file
     {
-        let read_db2 = PickleDb::load_read_only("read_only_policy_test.db").unwrap();
+        let read_db2 = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db2.exists("key1"));
         assert!(!read_db2.exists("key2"));
     }
 }
 
-#[test]
-fn dump_upon_request_policy_test() {
-    set_test_rsc!("dump_upon_request_policy_test.db");
+#[rstest_parametrize(
+    ser_method_int,
+    case(0),
+    case(1)
+)]
+fn dump_upon_request_policy_test(ser_method_int: i32) {
+    test_setup!("dump_upon_request_policy_test", ser_method_int, db_name);
 
     // create a DB and set a value
-    let mut db = PickleDb::new("dump_upon_request_policy_test.db", PickleDbDumpPolicy::DumpUponRequest);
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
     db.set("key1", &String::from("value1"));
 
     // verify file is not yet created
-    assert!(PickleDb::load_read_only("dump_upon_request_policy_test.db").is_err());
+    assert!(PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).is_err());
 
     // dump to file
     db.dump();
 
     // verify the change is dumped to the file
     {
-        let read_db = PickleDb::load_read_only("dump_upon_request_policy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db.exists("key1"));
     }
 
@@ -147,28 +164,32 @@ fn dump_upon_request_policy_test() {
 
     // verify the change is dumped to the file
     {
-        let read_db = PickleDb::load_read_only("dump_upon_request_policy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db.exists("key1"));
         assert!(read_db.exists("key2"));
     }
 }
 
-#[test]
-fn periodic_dump_policy_test() {
-    set_test_rsc!("periodic_dump_policy_test.db");
+#[rstest_parametrize(
+    ser_method_int,
+    case(0),
+    case(1)
+)]
+fn periodic_dump_policy_test(ser_method_int: i32) {
+    test_setup!("periodic_dump_policy_test", ser_method_int, db_name);
 
     // create a DB and set a value
-    let mut db = PickleDb::new("periodic_dump_policy_test.db", PickleDbDumpPolicy::PeriodicDump(Duration::new(1, 0)));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::PeriodicDump(Duration::new(1, 0)), ser_method!(ser_method_int));
     db.set("key1", &String::from("value1"));
 
     // verify file is not yet created
-    assert!(PickleDb::load_read_only("periodic_dump_policy_test.db").is_err());
+    assert!(PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).is_err());
 
     // sleep for 0.5 sec
     thread::sleep(time::Duration::from_millis(500));
 
     // verify file is not yet created
-    assert!(PickleDb::load_read_only("periodic_dump_policy_test.db").is_err());
+    assert!(PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).is_err());
 
     // sleep for 0.55 sec
     thread::sleep(time::Duration::from_millis(550));
@@ -178,7 +199,7 @@ fn periodic_dump_policy_test() {
 
     // verify the change is dumped to the file
     {
-        let read_db = PickleDb::load_read_only("periodic_dump_policy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db.exists("key1"));
         assert!(read_db.exists("key2"));
     }
@@ -188,7 +209,7 @@ fn periodic_dump_policy_test() {
 
     // verify the change is not yet dumped to the file
     {
-        let read_db = PickleDb::load_read_only("periodic_dump_policy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(!read_db.exists("key3"));
     }
 
@@ -197,7 +218,7 @@ fn periodic_dump_policy_test() {
 
     // verify the change is now dumped to the file
     {
-        let read_db = PickleDb::load_read_only("periodic_dump_policy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db.exists("key3"));
     }
 
@@ -209,7 +230,7 @@ fn periodic_dump_policy_test() {
 
     // verify the change is dumped to the file
     {
-        let read_db = PickleDb::load_read_only("periodic_dump_policy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db.exists("key4"));
     }
 
@@ -221,7 +242,7 @@ fn periodic_dump_policy_test() {
 
     // verify the change is dumped to the file
     {
-        let read_db = PickleDb::load_read_only("periodic_dump_policy_test.db").unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db.exists("key5"));
     }
 }

@@ -8,7 +8,7 @@
 #[macro_use]
 extern crate serde_derive;
 
-use pickledb::{PickleDb, PickleDbDumpPolicy};
+use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 use std::fmt::{self, Formatter, Display};
 
 /// Define an example struct which represents a rectangle. 
@@ -27,7 +27,7 @@ impl Display for Rectangle {
 
 /// Create a new DB and add one key-value pair to it
 fn create_db(db_name: &str) {
-    let mut new_db = PickleDb::new(db_name, PickleDbDumpPolicy::AutoDump);
+    let mut new_db = PickleDb::new(db_name, PickleDbDumpPolicy::AutoDump, SerializationMethod::Bin);
 
     new_db.set("key1", &100);
 }
@@ -38,7 +38,7 @@ fn main() {
     create_db("example.db");
 
     // load the DB
-    let mut db = PickleDb::load("example.db", PickleDbDumpPolicy::AutoDump).unwrap();
+    let mut db = PickleDb::load("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Bin).unwrap();
 
     // print the existing value in key1
     println!("The value of key1 is: {}", db.get::<i32>("key1").unwrap());
@@ -70,7 +70,7 @@ fn main() {
 
     // print the item in each position of the list
     println!("list1[0] = {}", db.lget::<i32>("list1", 0).unwrap());
-    println!("list1[1] = {}", db.lget::<f32>("list1", 1).unwrap());
+    println!("list1[1] = {}", db.lget::<f64>("list1", 1).unwrap());
     println!("list1[2] = {}", db.lget::<String>("list1", 2).unwrap());
     println!("list1[3] = {:?}", db.lget::<Vec<char>>("list1", 3).unwrap());
     println!("list1[4] = {}", db.lget::<Rectangle>("list1", 4).unwrap());
@@ -81,7 +81,7 @@ fn main() {
     db.lpop::<i32>("list1", 0);
 
     // print the new first item of the list
-    println!("The new list1[0] = {}", db.lget::<f32>("list1", 0).unwrap());
+    println!("The new list1[0] = {}", db.lget::<f64>("list1", 0).unwrap());
 
     // remove the entire list
     db.lrem_list("list1");

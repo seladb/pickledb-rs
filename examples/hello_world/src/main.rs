@@ -6,7 +6,7 @@
 #[macro_use]
 extern crate serde_derive;
 
-use pickledb::{PickleDb, PickleDbDumpPolicy};
+use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 use std::fmt::{self, Formatter, Display};
 
 /// Define an example struct which represents a rectangle. 
@@ -25,8 +25,9 @@ impl Display for Rectangle {
 
 fn main() {
 
-    // create a new DB with AutoDum, meaning every change is written to the file
-    let mut db = PickleDb::new("example.db", PickleDbDumpPolicy::AutoDump);
+    // create a new DB with AutoDum, meaning every change is written to the file,
+    // and with Json serialization
+    let mut db = PickleDb::new("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Json);
     
     // set the value 100 to the key 'key1'
     db.set("key1", &100);
@@ -74,7 +75,7 @@ fn main() {
 
 
     // load an existing DB from a file (the same file in this case)
-    let db2 = PickleDb::load("example.db", PickleDbDumpPolicy::DumpUponRequest).unwrap();
+    let db2 = PickleDb::load("example.db", PickleDbDumpPolicy::DumpUponRequest, SerializationMethod::Json).unwrap();
 
     // print the value of key1
     println!("Value of key1 as loaded from file is: {}", db2.get::<String>("key1").unwrap());
