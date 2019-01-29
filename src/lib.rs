@@ -229,18 +229,27 @@ impl PickleDb {
     /// ```
     /// 
     /// TODO: fix doc
+    /// TODO: write test
     pub fn new_json(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb::new(location, dump_policy, SerializationMethod::Json)
     }
 
     /// TODO: fix doc
+    /// TODO: write test
     pub fn new_bin(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb::new(location, dump_policy, SerializationMethod::Bin)
     }
 
     /// TODO: fix doc
+    /// TODO: write test
     pub fn new_yaml(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb::new(location, dump_policy, SerializationMethod::Yaml)
+    }
+
+    /// TODO: fix doc
+    /// TODO: write test
+    pub fn new_cbor(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
+        PickleDb::new(location, dump_policy, SerializationMethod::Cbor)
     }
 
     /// TODO: fix doc
@@ -300,19 +309,29 @@ impl PickleDb {
     }
 
     /// TODO: fix doc
+    /// TODO: write test
     pub fn load_json(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
         PickleDb::load(location, dump_policy, SerializationMethod::Json)
     }
 
     /// TODO: fix doc
+    /// TODO: write test
     pub fn load_bin(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
         PickleDb::load(location, dump_policy, SerializationMethod::Bin)
     }
 
     /// TODO: fix doc
+    /// TODO: write test
     pub fn load_yaml(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
         PickleDb::load(location, dump_policy, SerializationMethod::Yaml)
     }
+
+    /// TODO: fix doc
+    /// TODO: write test
+    pub fn load_cbor(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
+        PickleDb::load(location, dump_policy, SerializationMethod::Cbor)
+    }
+
 
     /// Load a DB from a file in read-only mode.
     ///

@@ -14,7 +14,8 @@ use rstest::rstest_parametrize;
     ser_method_int,
     case(0),
     case(1),
-    case(2)
+    case(2),
+    case(3)
 )]
 fn basic_lists(ser_method_int: i32) {
     test_setup!("basic_lists", ser_method_int, db_name);
@@ -124,7 +125,8 @@ fn basic_lists(ser_method_int: i32) {
     ser_method_int,
     case(0),
     case(1),
-    case(2)
+    case(2),
+    case(3)
 )]
 fn add_and_extend_lists(ser_method_int: i32) {
     test_setup!("add_and_extend_lists", ser_method_int, db_name);
@@ -180,7 +182,8 @@ fn add_and_extend_lists(ser_method_int: i32) {
     ser_method_int,
     case(0),
     case(1),
-    case(2)
+    case(2),
+    case(3)
 )]
 fn override_lists(ser_method_int: i32) {
     test_setup!("override_lists", ser_method_int, db_name);
@@ -227,7 +230,8 @@ fn override_lists(ser_method_int: i32) {
     ser_method_int,
     case(0),
     case(1),
-    case(2)
+    case(2),
+    case(3)
 )]
 fn lget_corner_cases(ser_method_int: i32) {
     test_setup!("lget_corner_cases", ser_method_int, db_name);
@@ -271,7 +275,8 @@ fn lget_corner_cases(ser_method_int: i32) {
     ser_method_int,
     case(0),
     case(1),
-    case(2)
+    case(2),
+    case(3)
 )]
 fn add_to_non_existent_list(ser_method_int: i32) {
     test_setup!("lget_corner_cases", ser_method_int, db_name);
@@ -308,7 +313,8 @@ fn add_to_non_existent_list(ser_method_int: i32) {
     ser_method_int,
     case(0),
     case(1),
-    case(2)
+    case(2),
+    case(3)
 )]
 fn remove_list(ser_method_int: i32) {
     test_setup!("remove_list", ser_method_int, db_name);
@@ -364,7 +370,8 @@ fn remove_list(ser_method_int: i32) {
     ser_method_int,
     case(0),
     case(1),
-    case(2)
+    case(2),
+    case(3)
 )]
 fn remove_values_from_list(ser_method_int: i32) {
     test_setup!("remove_values_from_list", ser_method_int, db_name);
@@ -454,7 +461,8 @@ fn remove_values_from_list(ser_method_int: i32) {
     ser_method_int,
     case(0),
     case(1),
-    case(2)
+    case(2),
+    case(3)
 )]
 fn list_with_special_strings(ser_method_int: i32) {
     test_setup!("list_with_special_strings", ser_method_int, db_name);
@@ -494,7 +502,8 @@ fn list_with_special_strings(ser_method_int: i32) {
     ser_method_int,
     case(0),
     case(1),
-    case(2)
+    case(2),
+    case(3)
 )]
 fn list_iter_test(ser_method_int: i32) {
     test_setup!("list_iter_test", ser_method_int, db_name);
@@ -537,7 +546,8 @@ fn list_iter_test(ser_method_int: i32) {
     ser_method_int,
     case(0),
     case(1),
-    case(2)
+    case(2),
+    case(3)
 )]
 fn list_doesnt_exist_iter_test(ser_method_int: i32) {
     test_setup!("list_doesnt_exist_iter_test", ser_method_int, db_name);

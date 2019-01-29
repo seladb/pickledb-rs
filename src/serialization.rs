@@ -4,12 +4,14 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
 use bincode;
 use serde_yaml;
+use serde_cbor;
 
 #[derive(Debug)]
 pub enum SerializationMethod {
     Json,
     Bin,
-    Yaml
+    Yaml,
+    Cbor
 }
 
 impl From<i32> for SerializationMethod {
@@ -18,6 +20,7 @@ impl From<i32> for SerializationMethod {
             0 => SerializationMethod::Json,
             1 => SerializationMethod::Bin,
             2 => SerializationMethod::Yaml,
+            3 => SerializationMethod::Cbor,
             _ => SerializationMethod::Json
         }
     }
@@ -203,14 +206,55 @@ impl BincodeSerializer {
             None => Err(String::from("Cannot deserialize DB"))
         }
     }
-
 }
+
+
+struct CborSerializer { }
+
+impl CborSerializer {
+    fn new() -> CborSerializer {
+        CborSerializer {}
+    }
+
+    fn deserialize_data<V>(&self, ser_data: &[u8]) -> Option<V> 
+        where 
+            V: DeserializeOwned    
+    {
+        match serde_cbor::from_slice(ser_data) {
+            Ok(val) => Some(val),
+            Err(_) => None
+        }
+    }
+
+    fn serialize_data<V>(&self, data: &V) -> Result<Vec<u8>, String>
+            where
+                V: Serialize
+    {
+        match serde_cbor::to_vec(data) {
+            Ok(ser_data) => Ok(ser_data),
+            Err(err) => Err(err.to_string())
+        }        
+    }
+
+    fn serialize_db(&self, map: &HashMap<String, Vec<u8>>, list_map: &HashMap<String, Vec<Vec<u8>>>) -> Result<Vec<u8>, String> {
+        self.serialize_data(&(map, list_map))
+    }
+
+    fn deserialize_db(&self, ser_db: &[u8]) -> Result<(HashMap<String, Vec<u8>>, HashMap<String, Vec<Vec<u8>>>), String> {
+        match self.deserialize_data(ser_db) {
+            Some((map, list_map)) => Ok((map, list_map)),
+            None => Err(String::from("Cannot deserialize DB"))
+        }
+    }
+}
+
 
 pub(crate) struct Serializer {
     ser_method: SerializationMethod,
     json_serializer: JsonSerializer,
     bincode_serializer: BincodeSerializer,
-    yaml_serializer: YamlSerializer
+    yaml_serializer: YamlSerializer,
+    cbor_serializer: CborSerializer
 }
 
 impl Serializer {
@@ -220,7 +264,8 @@ impl Serializer {
             ser_method: ser_method,
             json_serializer: JsonSerializer::new(),
             bincode_serializer: BincodeSerializer::new(),
-            yaml_serializer: YamlSerializer::new()
+            yaml_serializer: YamlSerializer::new(),
+            cbor_serializer: CborSerializer::new(),
         }
 
     }
@@ -232,7 +277,8 @@ impl Serializer {
         match self.ser_method {
             SerializationMethod::Json => self.json_serializer.deserialize_data(ser_data),
             SerializationMethod::Bin => self.bincode_serializer.deserialize_data(ser_data),
-            SerializationMethod::Yaml => self.yaml_serializer.deserialize_data(ser_data)
+            SerializationMethod::Yaml => self.yaml_serializer.deserialize_data(ser_data),
+            SerializationMethod::Cbor => self.cbor_serializer.deserialize_data(ser_data)
         }
     }
 
@@ -243,7 +289,8 @@ impl Serializer {
         match self.ser_method {
             SerializationMethod::Json => self.json_serializer.serialize_data(data),
             SerializationMethod::Bin => self.bincode_serializer.serialize_data(data),
-            SerializationMethod::Yaml => self.yaml_serializer.serialize_data(data)
+            SerializationMethod::Yaml => self.yaml_serializer.serialize_data(data),
+            SerializationMethod::Cbor => self.cbor_serializer.serialize_data(data)
         }
     }
 
@@ -252,6 +299,7 @@ impl Serializer {
             SerializationMethod::Json => self.json_serializer.serialize_db(map, list_map),
             SerializationMethod::Bin => self.bincode_serializer.serialize_db(map, list_map),
             SerializationMethod::Yaml => self.yaml_serializer.serialize_db(map, list_map),
+            SerializationMethod::Cbor => self.cbor_serializer.serialize_db(map, list_map)
         }
     }
 
@@ -259,7 +307,8 @@ impl Serializer {
         match self.ser_method {
             SerializationMethod::Json => self.json_serializer.deserialize_db(ser_db),
             SerializationMethod::Bin => self.bincode_serializer.deserialize_db(ser_db),
-            SerializationMethod::Yaml => self.yaml_serializer.deserialize_db(ser_db)
+            SerializationMethod::Yaml => self.yaml_serializer.deserialize_db(ser_db),
+            SerializationMethod::Cbor => self.cbor_serializer.deserialize_db(ser_db)
         }
     }
 }
