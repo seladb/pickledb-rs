@@ -38,6 +38,6 @@ macro_rules! ser_method {
 macro_rules! test_setup {
     ($function_name:expr, $ser_method_int:expr, $db_name:ident) => {
         let $db_name = format!("{}_{}.db", $function_name, ser_method!($ser_method_int).to_string());
-        //set_test_rsc!(&$db_name);
+        set_test_rsc!(&$db_name);
     }
 }
