@@ -27,15 +27,15 @@ fn lists_and_values(ser_method_int: i32) {
     let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
 
     // set a few values
-    db.set("key1", &String::from("val1"));
-    db.set("key2", &1);
-    db.set("key3", &vec![1,2,3]);
+    assert!(db.set("key1", &String::from("val1")).is_ok());
+    assert!(db.set("key2", &1).is_ok());
+    assert!(db.set("key3", &vec![1,2,3]).is_ok());
 
     // create a few lists and add values to them
-    db.lcreate("list1")
+    db.lcreate("list1").unwrap()
       .lextend(&vec![1,2,3]);
 
-    db.lcreate("list2")
+    db.lcreate("list2").unwrap()
       .ladd(&1.1)
       .ladd(&String::from("some val"));
 
@@ -52,15 +52,15 @@ fn lists_and_values(ser_method_int: i32) {
     }
 
     // create key and list with the same name, make sure they override one another
-    db.set("key_or_list1", &1);
-    db.lcreate("key_or_list1");
+    assert!(db.set("key_or_list1", &1).is_ok());
+    assert!(db.lcreate("key_or_list1").is_ok());
 
     assert!(db.exists("key_or_list1"));
     assert!(db.get::<i32>("key_or_list1").is_none());
     assert!(db.lexists("key_or_list1"));
 
     // now set the key again and verify list is removed
-    db.set("key_or_list1", &2);
+    assert!(db.set("key_or_list1", &2).is_ok());
 
     assert!(db.exists("key_or_list1"));
     assert_eq!(db.get::<i32>("key_or_list1").unwrap(), 2);
@@ -113,16 +113,16 @@ fn load_test(ser_method_int: i32) {
         // randomly choose a type
         match possible_value_types.choose(&mut rng).unwrap() {
             1 => { // add a i32 value
-                db.set(&key, &rng.gen::<i32>());
+                db.set(&key, &rng.gen::<i32>()).unwrap();
                 map.insert(String::from(key), "i32");
             },
             2 => { // add a f32 value
-                db.set(&key, &rng.gen::<f32>());
+                db.set(&key, &rng.gen::<f32>()).unwrap();
                 map.insert(String::from(key), "f32");
             },
             3 => { // add a String value
                 let val_size = rng.gen_range(1, 50);
-                db.set(&key, &gen_random_string(&mut rng, val_size));
+                db.set(&key, &gen_random_string(&mut rng, val_size)).unwrap();
                 map.insert(String::from(key), "string");
             },
             4 => { // add a Vec<i32> value
@@ -134,7 +134,7 @@ fn load_test(ser_method_int: i32) {
                 for _ in 1..vec_size {
                     vec.push(rng.gen::<i32>());
                 }
-                db.set(&key, &vec);
+                db.set(&key, &vec).unwrap();
                 map.insert(String::from(key), "vec");
             },
             5 => { // add a List value
@@ -144,7 +144,7 @@ fn load_test(ser_method_int: i32) {
                 list_key.insert_str(0, "list_");
 
                 // create the list
-                db.lcreate(&list_key);
+                db.lcreate(&list_key).unwrap();
 
                 map.insert(String::from(list_key.clone()), "list");
 
@@ -191,7 +191,7 @@ fn load_test(ser_method_int: i32) {
     assert_eq!(map.iter().len(), generate_keys);
 
     // dump DB to file
-    db.dump();
+    assert!(db.dump().is_ok());
     
     // read again from file
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();

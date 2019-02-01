@@ -24,19 +24,19 @@ fn basic_set_get(ser_method_int: i32) {
 
     // set a number
     let num = 100;
-    db.set("num", &num);
+    db.set("num", &num).unwrap();
 
     // set a floating point number
     let float_num = 1.224;
-    db.set("float", &float_num);
+    db.set("float", &float_num).unwrap();
 
     // set a String
     let mystr = String::from("my string");
-    db.set("string", &mystr);
+    db.set("string", &mystr).unwrap();
 
     // set a Vec
     let myvec = vec![1,2,3];
-    db.set("vec", &myvec);
+    db.set("vec", &myvec).unwrap();
 
     // set a struct
     #[derive(Serialize, Deserialize, Debug)]
@@ -46,7 +46,7 @@ fn basic_set_get(ser_method_int: i32) {
     }
     let mycoor = Coor { x: 1, y
     : 2 };
-    db.set("struct", &mycoor);
+    db.set("struct", &mycoor).unwrap();
 
 
     // read a num
@@ -78,19 +78,19 @@ fn set_load_get(ser_method_int: i32) {
 
     // set a number
     let num = 100;
-    db.set("num", &num);
+    db.set("num", &num).unwrap();
 
     // set a floating point number
     let float_num = 1.224;
-    db.set("float", &float_num);
+    db.set("float", &float_num).unwrap();
 
     // set a String
     let mystr = String::from("my string");
-    db.set("string", &mystr);
+    db.set("string", &mystr).unwrap();
 
     // set a Vec
     let myvec = vec![1,2,3];
-    db.set("vec", &myvec);
+    db.set("vec", &myvec).unwrap();
 
     // set a struct
     #[derive(Serialize, Deserialize, Debug)]
@@ -100,11 +100,11 @@ fn set_load_get(ser_method_int: i32) {
     }
     let mycoor = Coor { x: 1, y
     : 2 };
-    db.set("struct", &mycoor);
+    db.set("struct", &mycoor).unwrap();
 
 
     // dump db to file
-    assert!(db.dump());
+    assert!(db.dump().is_ok());
 
     // read db from file
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
@@ -138,19 +138,19 @@ fn set_load_get_auto_dump(ser_method_int: i32) {
 
     // set a number
     let num = 100;
-    db.set("num", &num);
+    db.set("num", &num).unwrap();
 
     // set a floating point number
     let float_num = 1.224;
-    db.set("float", &float_num);
+    db.set("float", &float_num).unwrap();
 
     // set a String
     let mystr = String::from("my string");
-    db.set("string", &mystr);
+    db.set("string", &mystr).unwrap();
 
     // set a Vec
     let myvec = vec![1,2,3];
-    db.set("vec", &myvec);
+    db.set("vec", &myvec).unwrap();
 
     // set a struct
     #[derive(Serialize, Deserialize, Debug)]
@@ -160,7 +160,7 @@ fn set_load_get_auto_dump(ser_method_int: i32) {
     }
     let mycoor = Coor { x: 1, y
     : 2 };
-    db.set("struct", &mycoor);
+    db.set("struct", &mycoor).unwrap();
 
 
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
@@ -193,7 +193,7 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
 
     // set a number
     let num = 100;
-    db.set("num", &num);
+    db.set("num", &num).unwrap();
 
     // read this number immediately
     {
@@ -203,7 +203,7 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
 
     // set another number
     let num2 = 200;
-    db.set("num2", &num2);
+    db.set("num2", &num2).unwrap();
 
     // read this other number immediately
     {
@@ -212,7 +212,7 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
     }
 
     // set a different value for a given key
-    db.set("num", &101);
+    db.set("num", &101).unwrap();
 
     // read the new value
     assert_eq!(db.get::<i32>("num").unwrap(), 101);
@@ -222,7 +222,7 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
     }
 
     // set a different value of a different type for a given key
-    db.set("num", &vec![1,2,3]);
+    db.set("num", &vec![1,2,3]).unwrap();
 
     // read the new value
     if let SerializationMethod::Bin = ser_method!(ser_method_int) {
@@ -250,12 +250,12 @@ fn set_special_strings(ser_method_int: i32) {
     // create a db with auto_dump == true
     let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
 
-    db.set("string1", &String::from("\"dobule_quotes\""));
-    db.set("string2", &String::from("\'single_quotes\'"));
-    db.set("string3", &String::from("שָׁלוֹם"));
-    db.set("string4", &String::from("😻"));
-    db.set("string5", &String::from("\nescapes\t\r"));
-    db.set("string6", &String::from("my\\folder"));
+    db.set("string1", &String::from("\"dobule_quotes\"")).unwrap();
+    db.set("string2", &String::from("\'single_quotes\'")).unwrap();
+    db.set("string3", &String::from("שָׁלוֹם")).unwrap();
+    db.set("string4", &String::from("😻")).unwrap();
+    db.set("string5", &String::from("\nescapes\t\r")).unwrap();
+    db.set("string6", &String::from("my\\folder")).unwrap();
 
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
     assert_eq!(read_db.get::<String>("string1").unwrap(), String::from("\"dobule_quotes\""));
@@ -280,7 +280,7 @@ fn edge_cases(ser_method_int: i32) {
     let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
 
     let x = 123;
-    db.set("num", &x);
+    db.set("num", &x).unwrap();
 
     // load a read only version of the db from file
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
@@ -312,7 +312,7 @@ fn get_all_keys(ser_method_int: i32) {
     // insert 10 keys: key0..key9
     let num = 100;
     for i in 0..10 {
-        db.set(&format!("{}{}", "key", i), &num);
+        db.set(&format!("{}{}", "key", i), &num).unwrap();
     }
 
     // verify we have 10 keys
@@ -346,12 +346,12 @@ fn rem_keys(ser_method_int: i32) {
     // insert 10 keys: key0..key9
     let num = 100;
     for i in 0..10 {
-        db.set(&format!("{}{}", "key", i), &num);
+        db.set(&format!("{}{}", "key", i), &num).unwrap();
     }
 
     // remove 2 keys
-    assert!(db.rem("key5"));
-    assert!(db.rem("key8"));
+    assert!(db.rem("key5").unwrap_or(false));
+    assert!(db.rem("key8").unwrap_or(false));
 
     // verify we only have 8 keys now
     assert_eq!(db.total_keys(), 8);
@@ -386,11 +386,11 @@ fn iter_test(ser_method_int: i32) {
 
     let keys = vec!["key1", "key2", "key3", "key4", "key5"];
     // add a few keys and values
-    db.set(keys[0], &1);
-    db.set(keys[1], &1.1);
-    db.set(keys[2], &String::from("value1"));
-    db.set(keys[3], &vec![1,2,3]);
-    db.set(keys[4], &('a', 'b', 'c'));
+    db.set(keys[0], &1).unwrap();
+    db.set(keys[1], &1.1).unwrap();
+    db.set(keys[2], &String::from("value1")).unwrap();
+    db.set(keys[3], &vec![1,2,3]).unwrap();
+    db.set(keys[4], &('a', 'b', 'c')).unwrap();
 
     // iterate the db
     let mut keys_seen = vec![false, false, false, false, false];

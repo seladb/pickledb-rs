@@ -22,7 +22,7 @@ fn basic_lists(ser_method_int: i32) {
 
     let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
 
-    db.lcreate("list1");
+    db.lcreate("list1").unwrap();
 
     // add a number to list1
     let num = 100;
@@ -51,7 +51,7 @@ fn basic_lists(ser_method_int: i32) {
     assert!(db.ladd("list1", &mycoor).is_some());
 
     // create another list
-    db.lcreate("list2");
+    db.lcreate("list2").unwrap();
 
     // add a number to list2
     let num2 = 200;
@@ -134,9 +134,9 @@ fn add_and_extend_lists(ser_method_int: i32) {
     let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
 
     // create 3 lists
-    db.lcreate("list1");
-    db.lcreate("list2");
-    db.lcreate("list3");
+    db.lcreate("list1").unwrap();
+    db.lcreate("list2").unwrap();
+    db.lcreate("list3").unwrap();
 
     // list1 - add 6 elements using lextend
     assert!(db.lextend("list1", &vec![1,2,3,4,5,6]).is_some());
@@ -191,14 +191,14 @@ fn override_lists(ser_method_int: i32) {
     let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
 
     // create a list and add some values to it
-    db.lcreate("list1")
+    db.lcreate("list1").unwrap()
       .lextend(&vec!["aa", "bb", "cc"]);
 
     // verify list len is 3
     assert_eq!(db.llen("list1"), 3);
 
     // override the list
-    db.lcreate("list1");
+    db.lcreate("list1").unwrap();
 
     // verify list is now empty (override)
     assert!(db.lexists("list1"));
@@ -239,7 +239,7 @@ fn lget_corner_cases(ser_method_int: i32) {
     let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
 
     // create a list and add some values
-    db.lcreate("list1")
+    db.lcreate("list1").unwrap()
       .lextend(&vec!["hello", "world", "good", "morning"])
       .ladd(&100);
 
@@ -291,7 +291,7 @@ fn add_to_non_existent_list(ser_method_int: i32) {
     assert!(db.lextend("list1", &vec_of_nums).is_none());
 
     // creat a list
-    db.lcreate("list1");
+    db.lcreate("list1").unwrap();
 
     // add items to list that doesn't exist
     assert!(db.ladd("list2", &num).is_none());
@@ -302,7 +302,7 @@ fn add_to_non_existent_list(ser_method_int: i32) {
     assert!(db.lextend("list1", &vec_of_nums).is_some());
 
     // delete the list
-    assert!(db.rem("list1"));
+    assert!(db.rem("list1").unwrap_or(false));
 
     // add items to list that doesn't exist
     assert!(db.ladd("list1", &num).is_none());
@@ -322,16 +322,16 @@ fn remove_list(ser_method_int: i32) {
     let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
 
     // create some lists add add values to them
-    db.lcreate("list1")
+    db.lcreate("list1").unwrap()
       .lextend(&vec![1,2,3,4,5,6,7,8,9,10]);
 
-    db.lcreate("list2")
+    db.lcreate("list2").unwrap()
       .lextend(&vec!['a', 'b', 'c', 'd', 'e']);
 
-    db.lcreate("list3")
+    db.lcreate("list3").unwrap()
       .lextend(&vec![1.2, 1.3, 2.1, 3.1, 3.3, 7.889]);
 
-    db.lcreate("list4")
+    db.lcreate("list4").unwrap()
       .lextend(&vec!["aaa", "bbb", "ccc", "ddd", "eee"]);
 
     // verify number of lists in file
@@ -341,7 +341,7 @@ fn remove_list(ser_method_int: i32) {
     }
 
     // remove list1 using rem
-    assert!(db.rem("list1"));
+    assert!(db.rem("list1").unwrap_or(false));
 
     // verify number of lists
     assert_eq!(db.total_keys(), 3);
@@ -354,7 +354,7 @@ fn remove_list(ser_method_int: i32) {
 
 
     // remove list1 using lrem_list
-    assert_eq!(db.lrem_list("list3"), 6);
+    assert_eq!(db.lrem_list("list3").unwrap_or(0), 6);
 
     // verify number of lists
     assert_eq!(db.total_keys(), 2);
@@ -385,7 +385,7 @@ fn remove_values_from_list(ser_method_int: i32) {
     }
 
     // create a list and add some values
-    db.lcreate("list1")
+    db.lcreate("list1").unwrap()
       .lextend(&vec![1,2,3])
       .ladd(&String::from("hello"))
       .ladd(&1.234)
@@ -423,7 +423,7 @@ fn remove_values_from_list(ser_method_int: i32) {
     assert_eq!(db.lget::<i32>("list1", 1).unwrap(), 3);
 
     // remove the "hello" string
-    assert!(db.lrem_value("list1", &String::from("hello")));
+    assert!(db.lrem_value("list1", &String::from("hello")).unwrap_or(false));
 
     // list now looks like this:
     // Indices: [0, 1, 2,           3           ]
@@ -440,7 +440,7 @@ fn remove_values_from_list(ser_method_int: i32) {
     }
 
     // remove the MySquare(4)
-    assert!(db.lrem_value("list1", &MySquare { x: 4 }));
+    assert!(db.lrem_value("list1", &MySquare { x: 4 }).unwrap_or(false));
 
     // list now looks like this:
     // Indices: [0, 1, 2           ]
@@ -470,7 +470,7 @@ fn list_with_special_strings(ser_method_int: i32) {
     let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
 
     // create a list and add special strings to it
-    db.lcreate("list1")
+    db.lcreate("list1").unwrap()
       .ladd(&String::from("\"dobule_quotes\""))
       .ladd(&String::from("\'single_quotes\'"))
       .ladd(&String::from("שָׁלוֹם"))
@@ -514,7 +514,7 @@ fn list_iter_test(ser_method_int: i32) {
     let values = (1, 1.1, String::from("value"), vec![1,2,3], ('a', 'b', 'c'));
 
     // create a list with some values
-    db.lcreate("list1")
+    db.lcreate("list1").unwrap()
       .ladd(&values.0)
       .ladd(&values.1)
       .ladd(&values.2)
@@ -558,7 +558,7 @@ fn list_doesnt_exist_iter_test(ser_method_int: i32) {
     let values = (1, 1.1, String::from("value"), vec![1,2,3], ('a', 'b', 'c'));
 
     // create a list with some values
-    db.lcreate("list1")
+    db.lcreate("list1").unwrap()
       .ladd(&values.0)
       .ladd(&values.1)
       .ladd(&values.2)

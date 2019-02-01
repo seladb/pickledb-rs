@@ -29,7 +29,7 @@ impl Display for Rectangle {
 fn create_db(db_name: &str) {
     let mut new_db = PickleDb::new(db_name, PickleDbDumpPolicy::AutoDump, SerializationMethod::Bin);
 
-    new_db.set("key1", &100);
+    new_db.set("key1", &100).unwrap();
 }
 
 fn main() {
@@ -44,7 +44,7 @@ fn main() {
     println!("The value of key1 is: {}", db.get::<i32>("key1").unwrap());
 
     // create a new list
-    db.lcreate("list1")
+    db.lcreate("list1").unwrap()
 
     // add an integer item to the list
       .ladd(&200)
@@ -84,14 +84,14 @@ fn main() {
     println!("The new list1[0] = {}", db.lget::<f64>("list1", 0).unwrap());
 
     // remove the entire list
-    db.lrem_list("list1");
+    db.lrem_list("list1").unwrap();
 
     // was list1 removed?
     println!("list1 was removed. Is it still in the db? {}", db.lexists("list1"));
 
 
     // create a new list
-    db.lcreate("list2")
+    db.lcreate("list2").unwrap()
       .lextend(&vec![1,2,3,4]);
 
     // iterate over the items in list2

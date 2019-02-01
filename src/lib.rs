@@ -93,19 +93,21 @@
 //! Apart from this dump policy, persistency is also kept by a implementing the `Drop` trait for the `PickleDB` object which ensures all in-memory data 
 //! is dumped to the file upon destruction of the object.
 //! 
-use std::io::Error;
 use std::collections::HashMap;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::fs;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::serialization::Serializer;
+use crate::error::{Result, Error, ErrorCode};
 
 pub use crate::serialization::SerializationMethod;
 pub use self::iterators::{PickleDbIterator, PickleDbIteratorItem, PickleDbListIterator, PickleDbListIteratorItem};
 
 mod iterators;
 mod serialization;
+
+pub mod error;
 
 /// An enum that determines the policy of dumping PickleDB changes into the file 
 pub enum PickleDbDumpPolicy {
@@ -294,10 +296,20 @@ impl PickleDb {
     /// ```
     /// 
     /// TODO: fix doc
-    pub fn load(location: &str, dump_policy: PickleDbDumpPolicy, serialization_method: SerializationMethod) -> Result<PickleDb, Error> {
-        let content = fs::read(location)?;
+    pub fn load(location: &str, dump_policy: PickleDbDumpPolicy, serialization_method: SerializationMethod) -> Result<PickleDb> {
+
+        let content = match fs::read(location) {
+            Ok(file_content) => file_content,
+            Err(err) => return Err(Error::new(ErrorCode::Io(err)))
+        };
+
         let serializer = Serializer::new(serialization_method);
-        let maps_from_file: (_,_) = serializer.deserialize_db(&content).unwrap();
+
+        let maps_from_file: (_,_) = match serializer.deserialize_db(&content) {
+            Ok(maps) => maps,
+            Err(err_str) => return Err(Error::new(ErrorCode::Serialization(err_str)))
+        };
+
         Ok(PickleDb { 
             map: maps_from_file.0, 
             list_map: maps_from_file.1, 
@@ -310,25 +322,25 @@ impl PickleDb {
 
     /// TODO: fix doc
     /// TODO: write test
-    pub fn load_json(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
+    pub fn load_json(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
         PickleDb::load(location, dump_policy, SerializationMethod::Json)
     }
 
     /// TODO: fix doc
     /// TODO: write test
-    pub fn load_bin(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
+    pub fn load_bin(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
         PickleDb::load(location, dump_policy, SerializationMethod::Bin)
     }
 
     /// TODO: fix doc
     /// TODO: write test
-    pub fn load_yaml(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
+    pub fn load_yaml(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
         PickleDb::load(location, dump_policy, SerializationMethod::Yaml)
     }
 
     /// TODO: fix doc
     /// TODO: write test
-    pub fn load_cbor(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb, Error> {
+    pub fn load_cbor(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
         PickleDb::load(location, dump_policy, SerializationMethod::Cbor)
     }
 
@@ -357,7 +369,7 @@ impl PickleDb {
     /// 
     /// 
     /// TODO: fix doc
-    pub fn load_read_only(location: &str, serialization_method: SerializationMethod) -> Result<PickleDb, Error> {
+    pub fn load_read_only(location: &str, serialization_method: SerializationMethod) -> Result<PickleDb> {
         PickleDb::load(location, PickleDbDumpPolicy::NeverDump, serialization_method)
     }
 
@@ -367,9 +379,11 @@ impl PickleDb {
     /// Otherwise the data is dumped to the file upon every change. This method returns `true` if
     /// dump is successful, false otherwise.
     /// 
-    pub fn dump(&mut self) -> bool {
+    /// TODO: fix doc
+    /// 
+    pub fn dump(&mut self) -> Result<()> {
         if let PickleDbDumpPolicy::NeverDump = self.dump_policy {
-            return true
+            return Ok(())
         }
 
         match self.serializer.serialize_db(&self.map, &self.list_map) {
@@ -380,31 +394,41 @@ impl PickleDb {
                         .duration_since(UNIX_EPOCH)
                         .unwrap()
                         .as_secs());
-                fs::write(&temp_file_path, ser_db).expect("Unable to write to temp file");
-                fs::rename(temp_file_path, &self.db_file_path).expect("Unable to rename file");
+
+                match fs::write(&temp_file_path, ser_db) {
+                    Ok(_) => (),
+                    Err(err) => return Err(Error::new(ErrorCode::Io(err)))
+                }
+
+                match fs::rename(temp_file_path, &self.db_file_path) {
+                    Ok(_) => (),
+                    Err(err) => return Err(Error::new(ErrorCode::Io(err)))
+                }
+
                 if let PickleDbDumpPolicy::PeriodicDump(_dur) = self.dump_policy {
                     self.last_dump = Instant::now();
                 }
-                true
+                Ok(())
             }
-            Err(_) => false,
+            Err(err_str) => Err(Error::new(ErrorCode::Serialization(err_str))),
         }
     }
 
-    fn dumpdb(&mut self) {
+    fn dumpdb(&mut self) -> Result<()> {
         match self.dump_policy {
             PickleDbDumpPolicy::AutoDump => {
-                self.dump();
+                self.dump()
             },
             PickleDbDumpPolicy::PeriodicDump(duration) => {
                 let now = Instant::now();
                 if now.duration_since(self.last_dump) > duration {
                     self.last_dump = Instant::now();
-                    self.dump();
+                    self.dump()?;
                 }
+                Ok(())
             },
 
-            _ => (),
+            _ => Ok(()),
         }
     }
 
@@ -444,15 +468,32 @@ impl PickleDb {
     /// db.set("key5", &mycoor);
     /// ```
     /// 
-    pub fn set<V>(&mut self, key: &str, value: &V)
+    /// TODO: fix doc
+    pub fn set<V>(&mut self, key: &str, value: &V) -> Result<()>
         where
             V: Serialize
     {
         if self.list_map.contains_key(key) {
             self.list_map.remove(key);
         }
-        self.map.insert(String::from(key), self.serializer.serialize_data(value).unwrap());
-        self.dumpdb();
+        let ser_data = match self.serializer.serialize_data(value) {
+            Ok(data) => data,
+            Err(err_str) => return Err(Error::new(ErrorCode::Serialization(err_str)))
+        };
+
+        let cur_value = self.map.get(key).cloned();
+        self.map.insert(String::from(key), ser_data);
+        match self.dumpdb() {
+            Ok(_) => Ok(()),
+            Err(err) => {
+                match cur_value {
+                    None => { self.map.remove(key); }
+                    Some(cur_val) => { self.map.insert(String::from(key), cur_val.to_vec()); }
+                }
+                
+                return Err(err)
+            }
+        }
     }
 
     /// Get a value of a key.
@@ -542,10 +583,35 @@ impl PickleDb {
     /// 
     /// * `key` - the key or list name to remove
     /// 
-    pub fn rem(&mut self, key: &str) -> bool {
-        let res = self.map.remove(key).is_some() || self.list_map.remove(key).is_some();
-        self.dumpdb();
-        res
+    /// TODO: fix doc
+    /// 
+    pub fn rem(&mut self, key: &str) -> Result<bool> {
+        let remove_map = match self.map.remove(key) {
+            None => None,
+            Some(val) => match self.dumpdb() {
+                Ok(_) => Some(val),
+                Err(err) => {
+                    self.map.insert(String::from(key), val);
+                    return Err(err)
+                }
+
+            }
+        };
+
+        let remove_list = match self.list_map.remove(key) {
+            None => None,
+            Some(list) => match self.dumpdb() {
+                Ok(_) => Some(list),
+                Err(err) => {
+                    self.list_map.insert(String::from(key), list);
+                    return Err(err)
+                }
+
+            }
+
+        };
+
+         Ok(remove_map.is_some() || remove_list.is_some())
     }
 
     /// Create a new list.
@@ -561,14 +627,15 @@ impl PickleDb {
     /// 
     /// * `name` - the key of the list that will be created
     /// 
-    pub fn lcreate(&mut self, name: &str) -> PickleDbListExtender {
+    /// TODO: fix doc
+    pub fn lcreate(&mut self, name: &str) -> Result<PickleDbListExtender> {
         let new_list: Vec<Vec<u8>> = Vec::new();
         if self.map.contains_key(name) {
             self.map.remove(name);
         }
         self.list_map.insert(String::from(name), new_list);
-        self.dumpdb();
-        PickleDbListExtender { db: self, list_name: String::from(name) }
+        self.dumpdb()?;
+        Ok(PickleDbListExtender { db: self, list_name: String::from(name) })
     }
 
     /// Check if a list exists.
@@ -660,11 +727,19 @@ impl PickleDb {
         let serializer = &self.serializer;
         match self.list_map.get_mut(name) {
             Some(list) => {
+                let original_len = list.len();
                 let serialized: Vec<Vec<u8>> = seq.iter()
                 .map(|x| serializer.serialize_data(x).unwrap())
                 .collect();
                 list.extend(serialized);
-                self.dumpdb();
+                match self.dumpdb() {
+                    Ok(_) => (),
+                    Err(_) => {
+                        let same_list = self.list_map.get_mut(name).unwrap();
+                        same_list.truncate(original_len);
+                        return None
+                    }
+                }
                 Some(PickleDbListExtender { db: self, list_name: String::from(name)})
             },
 
@@ -744,11 +819,22 @@ impl PickleDb {
     /// 
     /// * `name` - the list key to remove
     /// 
-    pub fn lrem_list(&mut self, name: &str) -> usize {
+    /// TODO: fix doc
+    /// 
+    pub fn lrem_list(&mut self, name: &str) -> Result<usize> {
         let res = self.llen(name);
-        self.list_map.remove(name);
-        self.dumpdb();
-        res
+        match self.list_map.remove(name) {
+            Some(list) => {
+                match self.dumpdb() {
+                    Ok(_) => Ok(res),
+                    Err(err) => {
+                        self.list_map.insert(String::from(name), list);
+                        return Err(err)
+                    }
+                }
+            },
+            None => Ok(res)
+        }
     }
 
     /// Pop an item out of a list.
@@ -798,8 +884,14 @@ impl PickleDb {
             Some(list) => {
                 if pos < list.len() {
                     let res = list.remove(pos);
-                    self.dumpdb();
-                    self.serializer.deserialize_data(&res)
+                    match self.dumpdb() {
+                        Ok(_) => self.serializer.deserialize_data::<V>(&res),
+                        Err(_) => {
+                            let same_list = self.list_map.get_mut(name).unwrap();
+                            same_list.insert(pos, res);
+                            None
+                        }
+                    }
                 } else {
                     None
                 }
@@ -844,25 +936,35 @@ impl PickleDb {
     /// // The list now looks like this: [1, 4]
     /// ```
     /// 
-    pub fn lrem_value<V>(&mut self, name: &str, value: &V) -> bool 
+    pub fn lrem_value<V>(&mut self, name: &str, value: &V) -> Result<bool> 
         where
             V: Serialize
     {
         match self.list_map.get_mut(name) {
             Some(list) => {
-                let serialized_value = self.serializer.serialize_data(&value).unwrap();
+                let serialized_value = match self.serializer.serialize_data(&value) {
+                    Ok(val) => val,
+                    Err(err_str) => return Err(Error::new(ErrorCode::Serialization(err_str)))
+                };
+
                 match list.iter().position(|x| *x == serialized_value) {
                     Some(pos) => {
                         list.remove(pos);
-                        self.dumpdb();
-                        true
+                        match self.dumpdb() {
+                            Ok(_) => Ok(true),
+                            Err(err) => {
+                                let same_list = self.list_map.get_mut(name).unwrap();
+                                same_list.insert(pos, serialized_value);
+                                Err(err)
+                            }
+                        }
                     },
 
-                    None => false,
+                    None => Ok(false),
                 }
             },
 
-            None => false,
+            None => Ok(false),
         }
     }
 
@@ -918,7 +1020,8 @@ impl Drop for PickleDb {
     fn drop(&mut self) {
         if let PickleDbDumpPolicy::NeverDump = self.dump_policy {
         } else {
-            self.dump();
+            // try to dump, ignore if fails
+            let _ = self.dump();
         }
     }
 }

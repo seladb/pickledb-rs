@@ -30,19 +30,19 @@ fn main() {
     let mut db = PickleDb::new("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Json);
     
     // set the value 100 to the key 'key1'
-    db.set("key1", &100);
+    db.set("key1", &100).unwrap();
 
     // set the value 1.1 to the key 'key2'
-    db.set("key2", &1.1);
+    db.set("key2", &1.1).unwrap();
 
     // set the value 'hello world' to the key 'key3'
-    db.set("key3", &String::from("hello world"));
+    db.set("key3", &String::from("hello world")).unwrap();
 
     // set a vector value to the key 'key4'
-    db.set("key4", &vec![1,2,3]);
+    db.set("key4", &vec![1,2,3]).unwrap();
 
     // set a Rectangle value to the key 'key5'
-    db.set("key5", &Rectangle { width: 4, length: 10});
+    db.set("key5", &Rectangle { width: 4, length: 10}).unwrap();
 
     // print the value of key1
     println!("The value of key1 is: {}", db.get::<i32>("key1").unwrap());
@@ -61,14 +61,14 @@ fn main() {
 
 
     // override the value of key1. Please note the new value is of a different type the former one
-    db.set("key1", &String::from("override"));
+    db.set("key1", &String::from("override")).unwrap();
 
     // print the value of key1
     println!("The value of key1 is: {}", db.get::<String>("key1").unwrap());
 
     
     // remove key2
-    db.rem("key2");
+    db.rem("key2").unwrap();
 
     // was key2 removed?
     println!("key2 was removed. Is it still in the db? {}", db.get::<f32>("key2").is_some());
