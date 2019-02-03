@@ -481,14 +481,13 @@ impl PickleDb {
             Err(err_str) => return Err(Error::new(ErrorCode::Serialization(err_str)))
         };
 
-        let cur_value = self.map.get(key).cloned();
-        self.map.insert(String::from(key), ser_data);
+        let original_value = self.map.insert(String::from(key), ser_data);
         match self.dumpdb() {
             Ok(_) => Ok(()),
             Err(err) => {
-                match cur_value {
+                match original_value {
                     None => { self.map.remove(key); }
-                    Some(cur_val) => { self.map.insert(String::from(key), cur_val.to_vec()); }
+                    Some(orig_value) => { self.map.insert(String::from(key), orig_value.to_vec()); }
                 }
                 
                 return Err(err)
