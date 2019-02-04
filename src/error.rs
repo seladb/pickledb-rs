@@ -2,19 +2,21 @@ use std::result;
 use std::io;
 use std::fmt;
 
-/// TODO: fix doc
+/// An enum that represents all types of errors that can occur when using PickleDB
 #[derive(Debug)]
 pub enum ErrorType {
+    /// I/O error when reading or writing to file, for example: file not found, etc.
     Io,
+    /// An error when trying to serialize or deserialize data
     Serialization
 }
 
-/// TODO: fix doc
+/// A struct that represents all possible errors that can occur when using PickleDB
 pub struct Error {
     err_code: ErrorCode
 }
 
-/// TODO: fix doc
+/// Alias for a `Result` with the error type [Error](struct.Error.html).
 pub type Result<T> = result::Result<T, Error>;
 
 impl Error {
@@ -23,6 +25,7 @@ impl Error {
         Error { err_code: err_code }
     }
 
+    /// Get the error type
     pub fn get_type(&self) -> ErrorType {
         match self.err_code {
             ErrorCode::Io(_) => ErrorType::Io,

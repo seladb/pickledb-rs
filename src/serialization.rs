@@ -6,11 +6,20 @@ use bincode;
 use serde_yaml;
 use serde_cbor;
 
+/// An enum for specifying the serialization method to use when creating a new PickleDB database
+/// or loading one from a file 
 #[derive(Debug)]
 pub enum SerializationMethod {
+    /// [JSON serialization](https://crates.io/crates/serde_json)
     Json,
+
+    /// [Bincode serialization](https://crates.io/crates/bincode)
     Bin,
+
+    /// [YAML serialization](https://crates.io/crates/serde_yaml)
     Yaml,
+
+    /// [CBOR serialization](https://crates.io/crates/serde_cbor)
     Cbor
 }
 

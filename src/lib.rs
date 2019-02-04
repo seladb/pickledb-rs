@@ -5,7 +5,7 @@
 //! 
 //! PickleDB's architecture is very simple and straight-forward: the whole key-value data structure is stored in memory and is dumped to a file
 //! periodically according to a policy defined by the user. There are APIs to create a new key-value store in memory or to load it from a file.
-//! Everything runs in the user's process and thread and in its memory, which means that the key-value data will be stored in the user 
+//! Everything runs in the user's process and memory and in the same thread, which means that the key-value data will be stored in the user 
 //! process's memory and each API call will access that key-value store directly and may trigger a dump to the DB file. There are no additional 
 //! threads or processes created throughout the life-cycle of any of the APIs.
 //! 
@@ -15,7 +15,7 @@
 //! be stored in a file. Most of the key-value stores out there provide high scalability, performance and robustness, but in the cost of a very 
 //! complex architecure, a lot of installation and configuration, and in many cases require a descent amount of resources. 
 //! But sometimes you don't need this scalability and performance and all you need is a simple solution that can be easily set up and is easy to
-//! use and understand. That's where PickleDB-rs comes into picture! I personally encountered several use cases like that and that's how I came 
+//! use and understand. That's where PickleDB-rs comes into the picture! I personally encountered several use cases like that and that's how I came 
 //! to know about [Python's PickleDB](https://pythonhosted.org/pickleDB/), and I thought it'd be nice to build one in Rust as well.
 //! 
 //! ## Main features
@@ -57,11 +57,16 @@
 //! their performance cost but high performance is not one of PickleDB's main objectives and I think it's a fair price to pay for achieving 
 //! heterogeneous data structures.
 //! 
-//! In order to achieve this magic, all objects must be serializable. PickleDB uses the [Serde](https://serde.rs/) library for serialization and 
-//! it currently supports only [JSON serialization](https://docs.serde.rs/serde_json/). In the future I intend to add more serialization options
-//! such as [bincode](https://crates.io/crates/bincode) or [pickle](https://crates.io/crates/serde-pickle).
+//! In order to achieve this magic, all objects must be serializable. PickleDB uses the [Serde](https://serde.rs/) library for serialization. 
+//! Currently 4 types of serialization are supported:
+//! * [JSON serialization](https://crates.io/crates/serde_json)
+//! * [Bincode serialization](https://crates.io/crates/bincode)
+//! * [YAML serialization](https://crates.io/crates/serde_yaml)
+//! * [CBOR serialization](https://crates.io/crates/serde_cbor)
 //! 
-//! So what does it mean that all objects must be serializable? That means that all map values and list items that you use must be serializable.
+//! The user can choose a serialization type to use upon creating a DB or loading it from a file.
+//! 
+//! So what does it mean that all objects must be serializable? That means that all objects that you use must be serializable.
 //! Fortunately Serde already provides out-of-the-box serialization for most of the common objects: all primitive types, strings, vectors and tuples
 //! are already serializable and you don't need to do anything to use them. But if you want to define your own structs or enums, you need to make sure 
 //! they're serializable, which means that:
