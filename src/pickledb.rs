@@ -2,6 +2,7 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::fs;
+use std::path::{Path, PathBuf};
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::serialization::Serializer;
@@ -30,98 +31,18 @@ pub struct PickleDb {
     map: HashMap<String, Vec<u8>>, 
     list_map: HashMap<String, Vec<Vec<u8>>>,
     serializer: Serializer,
-    db_file_path: String,
+    db_file_path: PathBuf,
     dump_policy: PickleDbDumpPolicy,
     last_dump: Instant
 }
 
 impl PickleDb {
 
-    /// Constructs a new `PickleDB` instance that uses [JSON serialization](https://crates.io/crates/serde_json) for storing the data.
-    /// 
-    /// # Arguments
-    /// 
-    /// * `location` - a path where the DB will be stored
-    /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
-    ///    [PickleDB::load()](#method.load) to understand the different policy options
-    /// 
-    /// # Examples
-    /// 
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
-    /// 
-    /// let mut db = PickleDB::new_json("example.db", PickleDbDumpPolicy::AutoDump);
-    /// ```
-    ///
-    pub fn new_json(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
-        PickleDb::new(location, dump_policy, SerializationMethod::Json)
-    }
-
-    /// Constructs a new `PickleDB` instance that uses [Bincode serialization](https://crates.io/crates/bincode) for storing the data.
-    /// 
-    /// # Arguments
-    /// 
-    /// * `location` - a path where the DB will be stored
-    /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
-    ///    [PickleDB::load()](#method.load) to understand the different policy options
-    /// 
-    /// # Examples
-    /// 
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
-    /// 
-    /// let mut db = PickleDB::new_bin("example.db", PickleDbDumpPolicy::AutoDump);
-    /// ```
-    ///
-    pub fn new_bin(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
-        PickleDb::new(location, dump_policy, SerializationMethod::Bin)
-    }
-
-    /// Constructs a new `PickleDB` instance that uses [YAML serialization](https://crates.io/crates/serde_yaml) for storing the data.
-    /// 
-    /// # Arguments
-    /// 
-    /// * `location` - a path where the DB will be stored
-    /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
-    ///    [PickleDB::load()](#method.load) to understand the different policy options
-    /// 
-    /// # Examples
-    /// 
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
-    /// 
-    /// let mut db = PickleDB::new_yaml("example.db", PickleDbDumpPolicy::AutoDump);
-    /// ```
-    ///
-    pub fn new_yaml(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
-        PickleDb::new(location, dump_policy, SerializationMethod::Yaml)
-    }
-
-    /// Constructs a new `PickleDB` instance that uses [CBOR serialization](https://crates.io/crates/serde_cbor) for storing the data.
-    /// 
-    /// # Arguments
-    /// 
-    /// * `location` - a path where the DB will be stored
-    /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
-    ///    [PickleDB::load()](#method.load) to understand the different policy options
-    /// 
-    /// # Examples
-    /// 
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
-    /// 
-    /// let mut db = PickleDB::new_cbor("example.db", PickleDbDumpPolicy::AutoDump);
-    /// ```
-    ///
-    pub fn new_cbor(location: &str, dump_policy: PickleDbDumpPolicy) -> PickleDb {
-        PickleDb::new(location, dump_policy, SerializationMethod::Cbor)
-    }
-
     /// Constructs a new `PickleDB` instance.
     /// 
     /// # Arguments
     /// 
-    /// * `location` - a path where the DB will be stored
+    /// * `db_path` - a path where the DB will be stored
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
     ///    [PickleDB::load()](#method.load) to understand the different policy options
     /// * `serialization_method` - the serialization method to use for storing the data to memory and file
@@ -134,14 +55,97 @@ impl PickleDb {
     /// let mut db = PickleDB::new("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Json);
     /// ```
     /// 
-    pub fn new(location: &str, dump_policy: PickleDbDumpPolicy, serialization_method: SerializationMethod) -> PickleDb {
+    pub fn new<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy, serialization_method: SerializationMethod) -> PickleDb {
+        let mut db_path_buf = PathBuf::new();
+        db_path_buf.push(db_path);
+
         PickleDb { 
             map: HashMap::new(), 
             list_map: HashMap::new(),
             serializer: Serializer::new(serialization_method),
-            db_file_path: String::from(location), 
+            db_file_path: db_path_buf, 
             dump_policy: dump_policy,
             last_dump: Instant::now() }
+    }
+
+    /// Constructs a new `PickleDB` instance that uses [JSON serialization](https://crates.io/crates/serde_json) for storing the data.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `db_path` - a path where the DB will be stored
+    /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
+    ///    [PickleDB::load()](#method.load) to understand the different policy options
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust,ignore
+    /// use pickledb::PickleDb;
+    /// 
+    /// let mut db = PickleDB::new_json("example.db", PickleDbDumpPolicy::AutoDump);
+    /// ```
+    ///
+    pub fn new_json<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
+        PickleDb::new(db_path, dump_policy, SerializationMethod::Json)
+    }
+
+    /// Constructs a new `PickleDB` instance that uses [Bincode serialization](https://crates.io/crates/bincode) for storing the data.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `db_path` - a path where the DB will be stored
+    /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
+    ///    [PickleDB::load()](#method.load) to understand the different policy options
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust,ignore
+    /// use pickledb::PickleDb;
+    /// 
+    /// let mut db = PickleDB::new_bin("example.db", PickleDbDumpPolicy::AutoDump);
+    /// ```
+    ///
+    pub fn new_bin<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
+        PickleDb::new(db_path, dump_policy, SerializationMethod::Bin)
+    }
+
+    /// Constructs a new `PickleDB` instance that uses [YAML serialization](https://crates.io/crates/serde_yaml) for storing the data.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `db_path` - a path where the DB will be stored
+    /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
+    ///    [PickleDB::load()](#method.load) to understand the different policy options
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust,ignore
+    /// use pickledb::PickleDb;
+    /// 
+    /// let mut db = PickleDB::new_yaml("example.db", PickleDbDumpPolicy::AutoDump);
+    /// ```
+    ///
+    pub fn new_yaml<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
+        PickleDb::new(db_path, dump_policy, SerializationMethod::Yaml)
+    }
+
+    /// Constructs a new `PickleDB` instance that uses [CBOR serialization](https://crates.io/crates/serde_cbor) for storing the data.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `db_path` - a path where the DB will be stored
+    /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
+    ///    [PickleDB::load()](#method.load) to understand the different policy options
+    /// 
+    /// # Examples
+    /// 
+    /// ```rust,ignore
+    /// use pickledb::PickleDb;
+    /// 
+    /// let mut db = PickleDB::new_cbor("example.db", PickleDbDumpPolicy::AutoDump);
+    /// ```
+    ///
+    pub fn new_cbor<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
+        PickleDb::new(db_path, dump_policy, SerializationMethod::Cbor)
     }
 
     /// Load a DB from a file.
@@ -151,7 +155,7 @@ impl PickleDb {
     /// 
     /// # Arguments
     /// 
-    /// * `location` - a path where the DB is loaded from
+    /// * `db_path` - a path where the DB is loaded from
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. 
     ///   The user can choose between the following options:
     ///   * [PickleDbDumpPolicy::NeverDump](enum.PickleDbDumpPolicy.html#variant.NeverDump) - never dump any change,
@@ -175,9 +179,9 @@ impl PickleDb {
     /// let db = PickleDB::load("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Yaml);
     /// ```
     /// 
-    pub fn load(location: &str, dump_policy: PickleDbDumpPolicy, serialization_method: SerializationMethod) -> Result<PickleDb> {
+    pub fn load<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy, serialization_method: SerializationMethod) -> Result<PickleDb> {
 
-        let content = match fs::read(location) {
+        let content = match fs::read(db_path.as_ref()) {
             Ok(file_content) => file_content,
             Err(err) => return Err(Error::new(ErrorCode::Io(err)))
         };
@@ -189,11 +193,14 @@ impl PickleDb {
             Err(err_str) => return Err(Error::new(ErrorCode::Serialization(err_str)))
         };
 
+        let mut db_path_buf = PathBuf::new();
+        db_path_buf.push(db_path);
+
         Ok(PickleDb { 
             map: maps_from_file.0, 
             list_map: maps_from_file.1, 
             serializer: serializer,
-            db_file_path: String::from(location), 
+            db_file_path: db_path_buf, 
             dump_policy: dump_policy,
             last_dump: Instant::now()
             })
@@ -206,7 +213,7 @@ impl PickleDb {
     /// 
     /// # Arguments
     /// 
-    /// * `location` - a path where the DB is loaded from
+    /// * `db_path` - a path where the DB is loaded from
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. 
     ///   See [PickleDB::load()](#method.load) for more information
     /// 
@@ -218,8 +225,8 @@ impl PickleDb {
     /// let db = PickleDB::load_json("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     /// 
-    pub fn load_json(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
-        PickleDb::load(location, dump_policy, SerializationMethod::Json)
+    pub fn load_json<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
+        PickleDb::load(db_path, dump_policy, SerializationMethod::Json)
     }
 
     /// Load a DB from a file stored in Bincode format
@@ -229,7 +236,7 @@ impl PickleDb {
     /// 
     /// # Arguments
     /// 
-    /// * `location` - a path where the DB is loaded from
+    /// * `db_path` - a path where the DB is loaded from
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. 
     ///   See [PickleDB::load()](#method.load) for more information
     /// 
@@ -241,8 +248,8 @@ impl PickleDb {
     /// let db = PickleDB::load_bin("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     /// 
-    pub fn load_bin(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
-        PickleDb::load(location, dump_policy, SerializationMethod::Bin)
+    pub fn load_bin<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
+        PickleDb::load(db_path, dump_policy, SerializationMethod::Bin)
     }
 
     /// Load a DB from a file stored in Yaml format
@@ -252,7 +259,7 @@ impl PickleDb {
     /// 
     /// # Arguments
     /// 
-    /// * `location` - a path where the DB is loaded from
+    /// * `db_path` - a path where the DB is loaded from
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. 
     ///   See [PickleDB::load()](#method.load) for more information
     /// 
@@ -264,8 +271,8 @@ impl PickleDb {
     /// let db = PickleDB::load_yaml("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     /// 
-    pub fn load_yaml(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
-        PickleDb::load(location, dump_policy, SerializationMethod::Yaml)
+    pub fn load_yaml<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
+        PickleDb::load(db_path, dump_policy, SerializationMethod::Yaml)
     }
 
     /// Load a DB from a file stored in Cbor format
@@ -275,7 +282,7 @@ impl PickleDb {
     /// 
     /// # Arguments
     /// 
-    /// * `location` - a path where the DB is loaded from
+    /// * `db_path` - a path where the DB is loaded from
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. 
     ///   See [PickleDB::load()](#method.load) for more information
     /// 
@@ -287,8 +294,8 @@ impl PickleDb {
     /// let db = PickleDB::load_cbor("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     /// 
-    pub fn load_cbor(location: &str, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
-        PickleDb::load(location, dump_policy, SerializationMethod::Cbor)
+    pub fn load_cbor<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> Result<PickleDb> {
+        PickleDb::load(db_path, dump_policy, SerializationMethod::Cbor)
     }
 
 
@@ -303,7 +310,7 @@ impl PickleDb {
     /// 
     /// # Arguments
     /// 
-    /// * `location` - a path where the DB is loaded from
+    /// * `db_path` - a path where the DB is loaded from
     /// * `serialization_method` - the serialization method used to store the data in the file
     /// 
     /// # Examples
@@ -316,8 +323,8 @@ impl PickleDb {
     /// // nothing happens by calling this method
     /// readonly_db.dump();
     /// ```
-    pub fn load_read_only(location: &str, serialization_method: SerializationMethod) -> Result<PickleDb> {
-        PickleDb::load(location, PickleDbDumpPolicy::NeverDump, serialization_method)
+    pub fn load_read_only<P: AsRef<Path>>(db_path: P, serialization_method: SerializationMethod) -> Result<PickleDb> {
+        PickleDb::load(db_path, PickleDbDumpPolicy::NeverDump, serialization_method)
     }
 
     /// Dump the data to the file.
@@ -336,7 +343,7 @@ impl PickleDb {
         match self.serializer.serialize_db(&self.map, &self.list_map) {
             Ok(ser_db) => {
                 let temp_file_path = format!("{}.temp.{}", 
-                    self.db_file_path, 
+                    self.db_file_path.to_str().unwrap(), 
                     SystemTime::now()
                         .duration_since(UNIX_EPOCH)
                         .unwrap()
