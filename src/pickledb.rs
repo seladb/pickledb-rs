@@ -322,11 +322,11 @@ impl PickleDb {
 
     /// Dump the data to the file.
     /// 
-    /// Calling this method is necessary only if the DB is loaded or created with `auto_dump = true`.
-    /// Otherwise the data is dumped to the file upon every change. This method returns `true` if
-    /// dump is successful, false otherwise.
+    /// Calling this method is necessary only if the DB is loaded or created with a dump policy other than
+    /// [PickleDbDumpPolicy::AutoDump](enum.PickleDbDumpPolicy.html#variant.AutoDump), otherwise the data 
+    /// is dumped to the file upon every change. 
     /// 
-    /// TODO: fix doc
+    /// This method returns `Ok` if dump is successful, Or an `Err(`[Error](error/struct.Error.html)`)` otherwise.
     /// 
     pub fn dump(&mut self) -> Result<()> {
         if let PickleDbDumpPolicy::NeverDump = self.dump_policy {
@@ -382,8 +382,12 @@ impl PickleDb {
     /// Set a key-value pair.
     /// 
     /// The key has to be a string but the value can be of any type that is serializable.
-    /// That includes all primitive types, vectors, tuples and every struct that has the 
-    /// `#[derive(Serialize, Deserialize)` attribute.
+    /// That includes all primitive types, vectors, tuples, enums and every struct that 
+    /// has the `#[derive(Serialize, Deserialize)` attribute.
+    /// 
+    /// This method returns `Ok` if set is successful, Or an `Err(`[Error](error/struct.Error.html)`)`
+    /// otherwise. An error is not likely to happen but may occur mostly in cases where this
+    /// action triggers a DB dump (which is decided according to the dump policy)
     /// 
     /// # Arguments
     /// 
@@ -394,16 +398,16 @@ impl PickleDb {
     /// 
     /// ```rust,ignore
     /// // set a number
-    /// db.set("key1", &100);
+    /// db.set("key1", &100).unwrap();
     /// 
     /// // set a floating point number
-    /// db.set("key2", &1.234);
+    /// db.set("key2", &1.234).unwrap();
     /// 
     /// // set a String
-    /// db.set("key3", &String::from("hello world"));
+    /// db.set("key3", &String::from("hello world")).unwrap();
     /// 
     /// // set a Vec
-    /// db.set("key4", &vec![1,2,3]);
+    /// db.set("key4", &vec![1,2,3]).unwrap();
     /// 
     /// // set a struct
     /// #[derive(Serialize, Deserialize)]
@@ -412,10 +416,9 @@ impl PickleDb {
     ///     y: i32,
     /// }
     /// let mycoor = Coor { x: 1, y : 2 };
-    /// db.set("key5", &mycoor);
+    /// db.set("key5", &mycoor).unwrap();
     /// ```
     /// 
-    /// TODO: fix doc
     pub fn set<V>(&mut self, key: &str, value: &V) -> Result<()>
         where
             V: Serialize
@@ -523,13 +526,14 @@ impl PickleDb {
 
     /// Remove a key-value pair or a list from the DB.
     /// 
-    /// This methods returns `true` if the key was found in the DB or false if it wasn't found
+    /// This methods returns `Ok(true)` if the key was found in the DB or `Ok(false)` if it wasn't found.
+    /// It may also return `Err(`[Error](error/struct.Error.html)`)` if key was found but removal failed. 
+    /// Removal error is not likely to happen but may occur mostly in cases where this action triggers a DB dump 
+    /// (which is decided according to the dump policy)
     /// 
     /// # Arguments
     /// 
     /// * `key` - the key or list name to remove
-    /// 
-    /// TODO: fix doc
     /// 
     pub fn rem(&mut self, key: &str) -> Result<bool> {
         let remove_map = match self.map.remove(key) {
@@ -563,17 +567,23 @@ impl PickleDb {
     /// Create a new list.
     /// 
     /// This method just creates a new list, it doesn't add any elements to it.
-    /// For adding elements to the list please call [ladd()](#method.ladd) or [lextend()](#method.lextend).
     /// If another list or value is already set under this key, they will be overridden,
     /// meaning the new list will override the old list or value.
-    /// The method returns an object of type `PickleDbListExtender` that enables to add items 
-    /// to the newly created list
+    /// 
+    /// Upon success, the method returns an object of type 
+    /// [PickleDbListExtender](struct.PickleDbListExtender.html) that enables to add 
+    /// items to the newly created list. Alternatively you can use [ladd()](#method.ladd) 
+    /// or [lextend()](#method.lextend) to add items to the list.
+    /// 
+    /// In case of a failure an 
+    /// `Err(`[Error](error/struct.Error.html)`)` is returned. Failures 
+    /// are not likely to happen but may occur mostly in cases where this action triggers a DB dump 
+    /// (which is decided according to the dump policy)
     /// 
     /// # Arguments
     /// 
     /// * `name` - the key of the list that will be created
     /// 
-    /// TODO: fix doc
     pub fn lcreate(&mut self, name: &str) -> Result<PickleDbListExtender> {
         let new_list: Vec<Vec<u8>> = Vec::new();
         if self.map.contains_key(name) {
@@ -604,8 +614,12 @@ impl PickleDb {
     /// items of different types. That means that the item can be of any type that is serializable.
     /// That includes all primitive types, vectors, tuples and every struct that has the 
     /// `#[derive(Serialize, Deserialize)` attribute.
-    /// The method returns a `Some(PickleDbListExtender)` object that enables to add more items to the list
-    /// if the item was added successfully or `None` if the list name isn't found in the DB.
+    /// 
+    /// If the item was added successfully the method returns 
+    /// `Some(`[PickleDbListExtender](struct.PickleDbListExtender.html)`)` which enables to add more 
+    /// items to the list. Alternatively the method returns `None` if the list isn't found in the DB 
+    /// or if a failure happened while extending the list. Failures are not likely to happen but may 
+    /// occur mostly in cases where this action triggers a DB dump (which is decided according to the dump policy)
     /// 
     /// # Arguments
     /// 
@@ -640,8 +654,12 @@ impl PickleDb {
     /// This method adds multiple items to the list, but since they're in a vector that means all
     /// of them are of the same type. Of course it doesn't mean that the list cannot contain items
     /// of other types as well, as you can see in the example below.
-    /// The method return `Some(PickleDbListExtender)` that enables to add more items to the list 
-    /// if all items were added successfully or `None` if the list name isn't found in the DB.
+    /// 
+    /// If all items were added successfully the method returns 
+    /// `Some(`[PickleDbListExtender](struct.PickleDbListExtender.html)`)` which enables to add more 
+    /// items to the list. Alternatively the method returns `None` if the list isn't found in the DB 
+    /// or if a failure happened while extending the list. Failures are not likely to happen but may 
+    /// occur mostly in cases where this action triggers a DB dump (which is decided according to the dump policy)
     /// 
     /// # Arguments
     /// 
@@ -655,7 +673,7 @@ impl PickleDb {
     /// db.lcreate("list1");
     /// 
     /// // add a bunch of numbers to the list
-    /// db.lextends("list1", &vec![100, 200, 300])
+    /// db.lextends("list1", &vec![100, 200, 300]).unwrap()
     /// 
     /// // add a String item to the list
     ///   .ladd(&String::from("my string"))
@@ -758,14 +776,14 @@ impl PickleDb {
     /// This method is somewhat similar to [rem()](#method.rem) but with 2 small differences:
     /// * This method only removes lists and not key-value pairs
     /// * The return value of this method is the number of items that were in 
-    ///   the list that was removed. If the list doesn't exist a value of 0 is
-    ///   returned
+    ///   the list that was removed. If the list doesn't exist a value of zero (0) is
+    ///   returned. In case of a failure an `Err(`[Error](error/struct.Error.html)`)` is returned. 
+    ///   Failures are not likely to happen but may occur mostly in cases where this action triggers a 
+    ///   DB dump (which is decided according to the dump policy)
     /// 
     /// # Arguments
     /// 
     /// * `name` - the list key to remove
-    /// 
-    /// TODO: fix doc
     /// 
     pub fn lrem_list(&mut self, name: &str) -> Result<usize> {
         let res = self.llen(name);
@@ -790,9 +808,13 @@ impl PickleDb {
     /// to know what is the correct type of the item and give it while calling this method.
     /// Since the item in the lists are stored in a serialized way the returned object 
     /// is not a reference to the item stored in a DB but actually a new instance of it.
-    /// If the list is not found in the DB or the given position is out of bounds
-    /// no item will be removed and `None` will be returned. Otherwise the item will be
-    /// removed and `Some(V)` will be returned.
+    /// 
+    /// If the list is not found in the DB or the given position is out of bounds no item 
+    /// will be removed and `None` will be returned. `None` may also be returned
+    /// if removing the item fails, which may happen mostly in cases where this action 
+    /// triggers a DB dump (which is decided according to the dump policy).
+    /// Otherwise the item will be removed and `Some(V)` will be returned.
+    /// 
     /// This method is very similar to [lrem_value()](#method.lrem_value), the only difference is that this 
     /// methods returns the value and [lrem_value()](#method.lrem_value) returns only an indication whether
     /// the item was removed or not.
@@ -851,9 +873,14 @@ impl PickleDb {
     /// 
     /// This method takes a list name and a position inside the list, removes the
     /// item in this position and returns an indication whether the item was removed or not.
-    /// If the list is not found in the DB or the given position is out of bounds
-    /// no item will be removed and `false` will be returned. Otherwise the item will be
-    /// removed and `true` will be returned.
+    /// 
+    /// If the list is not found in the DB or the given position is out of bounds no item will 
+    /// be removed and `Ok(false)` will be returned. 
+    /// If removing the item fails, which may happen mostly in cases where this action triggers 
+    /// a DB dump (which is decided according to the dump policy), an 
+    /// `Err(`[Error](error/struct.Error.html)`)` is returned. 
+    /// Otherwise the item will be removed and `Ok(true)` will be returned.
+    /// 
     /// This method is very similar to [lpop()](#method.lpop), the only difference is that this 
     /// methods returns an indication and [lpop()](#method.lpop) returns the actual item that was removed.
     /// 
@@ -872,12 +899,12 @@ impl PickleDb {
     /// db.lextend("list1", &vec![1,2,3,4]);
     /// 
     /// // remove item in position 2
-    /// db.lrem_value("list1", 2);
+    /// db.lrem_value("list1", 2).unwrap();
     /// 
     /// // The list now looks like this: [1, 2, 4]
     /// 
     /// // remove item in position 1
-    /// db.lrem_value("list1", 1);
+    /// db.lrem_value("list1", 1).unwrap();
     /// 
     /// // The list now looks like this: [1, 4]
     /// ```
