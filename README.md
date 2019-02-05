@@ -39,7 +39,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-pickledb = "0.2.0"
+pickledb = "0.3.0"
 ```
 
 ## Documentation
@@ -57,10 +57,18 @@ There are currently two examples shipped with PickleDB:
 
 ## Changelog
 
+__Version 0.3.0__
+
+* Added new serialization options. Now PickleDB supports [JSON](https://crates.io/crates/serde_json), [Bincode](https://crates.io/crates/bincode),
+  [YAML](https://crates.io/crates/serde_yaml) and [CBOR](https://crates.io/crates/serde_cbor) serializations
+* Added proper error handling ([Issue #3](https://github.com/seladb/pickledb-rs/issues/3))
+* Use `Path` and `PathBuf` instead of strings to describe DB paths
+* Better organization of the code
+
 __Version 0.2.0__
 
 * Dump the DB to file in a crash-safe manner using a temp file (Thanks jamwt from Reddit
   for the tip: https://www.reddit.com/r/rust/comments/agumun/check_out_pickledb_a_lightweight_and_simple/ee987j0)
-* Extend lists became easier and multiple calls to lcreate(), ladd() and lextend() can be chained
+* Extend lists became easier and multiple calls to `lcreate()`, `ladd()` and `lextend()` can be chained
 * Added an iterator over keys and values in the DB
 * Added an iterator over items in a list
