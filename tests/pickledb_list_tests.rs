@@ -11,16 +11,16 @@ extern crate rstest;
 use rstest::rstest_parametrize;
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn basic_lists(ser_method_int: i32) {
-    test_setup!("basic_lists", ser_method_int, db_name);
+fn basic_lists(ser_method: SerializationMethod) {
+    test_setup!("basic_lists", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     db.lcreate("list1").unwrap();
 
@@ -92,7 +92,7 @@ fn basic_lists(ser_method_int: i32) {
 
 
     // load the file as read only db
-    let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method).unwrap();
 
     // verify lists length
     assert_eq!(read_db.llen("list1"), 5);
@@ -122,16 +122,16 @@ fn basic_lists(ser_method_int: i32) {
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn add_and_extend_lists(ser_method_int: i32) {
-    test_setup!("add_and_extend_lists", ser_method_int, db_name);
+fn add_and_extend_lists(ser_method: SerializationMethod) {
+    test_setup!("add_and_extend_lists", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // create 3 lists
     db.lcreate("list1").unwrap();
@@ -168,7 +168,7 @@ fn add_and_extend_lists(ser_method_int: i32) {
     }
 
     // read db from file
-    let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method).unwrap();
 
     // check all values in all lists
     for x in 0..5 {
@@ -179,16 +179,16 @@ fn add_and_extend_lists(ser_method_int: i32) {
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn override_lists(ser_method_int: i32) {
-    test_setup!("override_lists", ser_method_int, db_name);
+fn override_lists(ser_method: SerializationMethod) {
+    test_setup!("override_lists", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // create a list and add some values to it
     db.lcreate("list1").unwrap()
@@ -206,7 +206,7 @@ fn override_lists(ser_method_int: i32) {
 
     // read the list from file and verify the same
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method).unwrap();
         assert!(read_db.lexists("list1"));
         assert_eq!(read_db.llen("list1"), 0);
     }
@@ -220,23 +220,24 @@ fn override_lists(ser_method_int: i32) {
 
     // read the list from file and verify the same
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method).unwrap();
         assert!(read_db.lexists("list1"));
         assert_eq!(read_db.llen("list1"), 4);
     }
 }
 
+#[cfg(feature = "bincode")]
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn lget_corner_cases(ser_method_int: i32) {
-    test_setup!("lget_corner_cases", ser_method_int, db_name);
+fn lget_corner_cases(ser_method: SerializationMethod) {
+    test_setup!("lget_corner_cases", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method);
 
     // create a list and add some values
     db.lcreate("list1").unwrap()
@@ -248,13 +249,13 @@ fn lget_corner_cases(ser_method_int: i32) {
     assert_eq!(db.lget::<i32>("list1", 4).unwrap(), 100);
 
     // lget values that exist but in the wrong type
-    if let SerializationMethod::Bin = ser_method!(ser_method_int) {
+    if let SerializationMethod::Bin = ser_method {
         // N/A
     } else {
         assert!(db.lget::<i32>("list1", 0).is_none());
         assert!(db.lget::<Vec<i32>>("list1", 0).is_none());
 
-        if let SerializationMethod::Yaml = ser_method!(ser_method_int) {
+        if let SerializationMethod::Yaml = ser_method {
             // N/A
         }
         else {
@@ -272,16 +273,16 @@ fn lget_corner_cases(ser_method_int: i32) {
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn add_to_non_existent_list(ser_method_int: i32) {
-    test_setup!("lget_corner_cases", ser_method_int, db_name);
+fn add_to_non_existent_list(ser_method: SerializationMethod) {
+    test_setup!("lget_corner_cases", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method);
 
     let num = 100;
     let vec_of_nums = vec![1,2,3];
@@ -310,16 +311,16 @@ fn add_to_non_existent_list(ser_method_int: i32) {
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn remove_list(ser_method_int: i32) {
-    test_setup!("remove_list", ser_method_int, db_name);
+fn remove_list(ser_method: SerializationMethod) {
+    test_setup!("remove_list", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // create some lists add add values to them
     db.lcreate("list1").unwrap()
@@ -336,7 +337,7 @@ fn remove_list(ser_method_int: i32) {
 
     // verify number of lists in file
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method).unwrap();
         assert_eq!(read_db.total_keys(), 4);
     }
 
@@ -348,7 +349,7 @@ fn remove_list(ser_method_int: i32) {
 
     // verify number of lists in file
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method).unwrap();
         assert_eq!(read_db.total_keys(), 3);
     }
 
@@ -361,22 +362,22 @@ fn remove_list(ser_method_int: i32) {
 
     // verify number of lists in file
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method).unwrap();
         assert_eq!(read_db.total_keys(), 2);
     }
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn remove_values_from_list(ser_method_int: i32) {
-    test_setup!("remove_values_from_list", ser_method_int, db_name);
+fn remove_values_from_list(ser_method: SerializationMethod) {
+    test_setup!("remove_values_from_list", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // add a struct to list1
     #[derive(Serialize, Deserialize, Debug)]
@@ -407,7 +408,7 @@ fn remove_values_from_list(ser_method_int: i32) {
 
     // read this from file as well
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method).unwrap();
         assert_eq!(read_db.lget::<MySquare>("list1", 4).unwrap().x, 4);
         assert_eq!(read_db.lget::<String>("list1", 3).unwrap(), "hello");
     }
@@ -434,7 +435,7 @@ fn remove_values_from_list(ser_method_int: i32) {
 
     // read this from file as well
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method).unwrap();
         assert_eq!(read_db.lget::<MySquare>("list1", 3).unwrap().x, 10);
         assert_eq!(read_db.lget::<i32>("list1", 1).unwrap(), 3);
     }
@@ -451,23 +452,23 @@ fn remove_values_from_list(ser_method_int: i32) {
 
     // read this from file as well
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method).unwrap();
         assert_eq!(read_db.lget::<MySquare>("list1", 2).unwrap().x, 10);
         assert_eq!(read_db.lget::<i32>("list1", 0).unwrap(), 2);
     }
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn list_with_special_strings(ser_method_int: i32) {
-    test_setup!("list_with_special_strings", ser_method_int, db_name);
+fn list_with_special_strings(ser_method: SerializationMethod) {
+    test_setup!("list_with_special_strings", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // create a list and add special strings to it
     db.lcreate("list1").unwrap()
@@ -487,7 +488,7 @@ fn list_with_special_strings(ser_method_int: i32) {
     assert_eq!(db.lget::<String>("list1", 5).unwrap(), String::from("my\\folder"));
 
     // load db from file
-    let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
 
     // read strgins from list loaded from file
     assert_eq!(read_db.lget::<String>("list1", 0).unwrap(), String::from("\"dobule_quotes\""));
@@ -499,17 +500,17 @@ fn list_with_special_strings(ser_method_int: i32) {
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn list_iter_test(ser_method_int: i32) {
-    test_setup!("list_iter_test", ser_method_int, db_name);
+fn list_iter_test(ser_method: SerializationMethod) {
+    test_setup!("list_iter_test", ser_method, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     let values = (1, 1.1, String::from("value"), vec![1,2,3], ('a', 'b', 'c'));
 
@@ -543,17 +544,17 @@ fn list_iter_test(ser_method_int: i32) {
 
 #[should_panic]
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn list_doesnt_exist_iter_test(ser_method_int: i32) {
-    test_setup!("list_doesnt_exist_iter_test", ser_method_int, db_name);
+fn list_doesnt_exist_iter_test(ser_method: SerializationMethod) {
+    test_setup!("list_doesnt_exist_iter_test", ser_method, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     let values = (1, 1.1, String::from("value"), vec![1,2,3], ('a', 'b', 'c'));
 

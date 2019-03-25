@@ -15,16 +15,16 @@ extern crate rstest;
 use rstest::rstest_parametrize;
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn lists_and_values(ser_method_int: i32) {
-    test_setup!("lists_and_values", ser_method_int, db_name);
+fn lists_and_values(ser_method: SerializationMethod) {
+    test_setup!("lists_and_values", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // set a few values
     assert!(db.set("key1", &String::from("val1")).is_ok());
@@ -41,7 +41,7 @@ fn lists_and_values(ser_method_int: i32) {
 
     // read keys and lists
     {
-        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
         assert_eq!(read_db.get::<String>("key1").unwrap(), String::from("val1"));
         assert_eq!(read_db.get::<i32>("key2").unwrap(), 1);
         assert_eq!(read_db.get::<Vec<i32>>("key3").unwrap(), vec![1,2,3]);
@@ -76,16 +76,16 @@ fn gen_random_string<T: Rng>(rng: &mut T, size: usize) -> String {
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn load_test(ser_method_int: i32) {
-    test_setup!("load_test", ser_method_int, db_name);
+fn load_test(ser_method: SerializationMethod) {
+    test_setup!("load_test", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method);
 
     // number of keys to generate
     let generate_keys = 1000;
@@ -194,7 +194,7 @@ fn load_test(ser_method_int: i32) {
     assert!(db.dump().is_ok());
     
     // read again from file
-    let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
 
     // iterate every key/value_type in map saved before
     for (key, val_type) in map.iter() {

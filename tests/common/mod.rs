@@ -28,16 +28,9 @@ macro_rules! set_test_rsc {
 }
 
 #[macro_export]
-macro_rules! ser_method {
-    ($ser_method_int:expr) => {
-        SerializationMethod::from($ser_method_int);
-    }
-}
-
-#[macro_export]
 macro_rules! test_setup {
-    ($function_name:expr, $ser_method_int:expr, $db_name:ident) => {
-        let $db_name = format!("{}_{}.db", $function_name, ser_method!($ser_method_int).to_string());
+    ($function_name:expr, $ser_method:expr, $db_name:ident) => {
+        let $db_name = format!("{}_{}.db", $function_name, $ser_method.to_string());
         set_test_rsc!(&$db_name);
     }
 }

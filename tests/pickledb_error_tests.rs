@@ -10,6 +10,10 @@ use std::fs::File;
 
 mod common;
 
+#[cfg(feature = "json")]
+#[cfg(feature = "bincode")]
+#[cfg(feature = "cbor")]
+#[cfg(feature = "yaml")]
 #[test]
 fn load_serialization_error_test() {
     set_test_rsc!("json_db.db");
@@ -42,6 +46,7 @@ fn load_serialization_error_test() {
     assert!(PickleDb::load_yaml("json_db.db", PickleDbDumpPolicy::NeverDump).is_ok());
 }
 
+#[cfg(feature = "bincode")]
 #[test]
 fn load_error_test() {
 

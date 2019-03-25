@@ -11,16 +11,16 @@ extern crate rstest;
 use rstest::rstest_parametrize;
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn basic_set_get(ser_method_int: i32) {
-    test_setup!("basic_set_get", ser_method_int, db_name);
+fn basic_set_get(ser_method: SerializationMethod) {
+    test_setup!("basic_set_get", ser_method, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // set a number
     let num = 100;
@@ -64,17 +64,17 @@ fn basic_set_get(ser_method_int: i32) {
 
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn set_load_get(ser_method_int: i32) {
-    test_setup!("set_load_get", ser_method_int, db_name);
+fn set_load_get(ser_method: SerializationMethod) {
+    test_setup!("set_load_get", ser_method, db_name);
 
     // create a db with auto_dump == false
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method);
 
     // set a number
     let num = 100;
@@ -107,7 +107,7 @@ fn set_load_get(ser_method_int: i32) {
     assert!(db.dump().is_ok());
 
     // read db from file
-    let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
 
     // read a num
     assert_eq!(read_db.get::<i32>("num").unwrap(), num);
@@ -124,17 +124,17 @@ fn set_load_get(ser_method_int: i32) {
 
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn set_load_get_auto_dump(ser_method_int: i32) {
-    test_setup!("set_load_get_auto_dump", ser_method_int, db_name);
+fn set_load_get_auto_dump(ser_method: SerializationMethod) {
+    test_setup!("set_load_get_auto_dump", ser_method, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // set a number
     let num = 100;
@@ -163,7 +163,7 @@ fn set_load_get_auto_dump(ser_method_int: i32) {
     db.set("struct", &mycoor).unwrap();
 
 
-    let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
 
     // read a num
     assert_eq!(read_db.get::<i32>("num").unwrap(), num);
@@ -178,18 +178,19 @@ fn set_load_get_auto_dump(ser_method_int: i32) {
     assert_eq!(read_db.get::<Coor>("struct").unwrap().y, mycoor.y);
 }
 
+#[cfg(feature = "bincode")]
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn set_load_get_auto_dump2(ser_method_int: i32) {
-    test_setup!("set_load_get_auto_dump2", ser_method_int, db_name);
+fn set_load_get_auto_dump2(ser_method: SerializationMethod) {
+    test_setup!("set_load_get_auto_dump2", ser_method, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // set a number
     let num = 100;
@@ -197,7 +198,7 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
 
     // read this number immediately
     {
-        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
         assert_eq!(read_db.get::<i32>("num").unwrap(), num);
     }
 
@@ -207,7 +208,7 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
 
     // read this other number immediately
     {
-        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
         assert_eq!(read_db.get::<i32>("num2").unwrap(), num2);
     }
 
@@ -217,7 +218,7 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
     // read the new value
     assert_eq!(db.get::<i32>("num").unwrap(), 101);
     {
-        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
         assert_eq!(read_db.get::<i32>("num").unwrap(), 101);
     }
 
@@ -225,30 +226,30 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
     db.set("num", &vec![1,2,3]).unwrap();
 
     // read the new value
-    if let SerializationMethod::Bin = ser_method!(ser_method_int) {
+    if let SerializationMethod::Bin = ser_method {
         // N/A
     } else {
         assert!(db.get::<i32>("num").is_none());
     }
     assert_eq!(db.get::<Vec<i32>>("num").unwrap(), vec![1,2,3]);
     {
-        let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
         assert_eq!(read_db.get::<Vec<i32>>("num").unwrap(), vec![1,2,3]);
     }
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn set_special_strings(ser_method_int: i32) {
-    test_setup!("set_special_strings", ser_method_int, db_name);
+fn set_special_strings(ser_method: SerializationMethod) {
+    test_setup!("set_special_strings", ser_method, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     db.set("string1", &String::from("\"dobule_quotes\"")).unwrap();
     db.set("string2", &String::from("\'single_quotes\'")).unwrap();
@@ -257,7 +258,7 @@ fn set_special_strings(ser_method_int: i32) {
     db.set("string5", &String::from("\nescapes\t\r")).unwrap();
     db.set("string6", &String::from("my\\folder")).unwrap();
 
-    let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
     assert_eq!(read_db.get::<String>("string1").unwrap(), String::from("\"dobule_quotes\""));
     assert_eq!(read_db.get::<String>("string2").unwrap(), String::from("\'single_quotes\'"));
     assert_eq!(read_db.get::<String>("string3").unwrap(), String::from("שָׁלוֹם"));
@@ -266,48 +267,49 @@ fn set_special_strings(ser_method_int: i32) {
     assert_eq!(read_db.get::<String>("string6").unwrap(), String::from("my\\folder"));
 }
 
+#[cfg(feature = "yaml")]
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn edge_cases(ser_method_int: i32) {
-    test_setup!("edge_cases", ser_method_int, db_name);
+fn edge_cases(ser_method: SerializationMethod) {
+    test_setup!("edge_cases", ser_method, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     let x = 123;
     db.set("num", &x).unwrap();
 
     // load a read only version of the db from file
-    let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
 
     assert_eq!(db.get::<i32>("num"), Some(x));
     assert_eq!(read_db.get::<i32>("num"), Some(x));
-    if let SerializationMethod::Yaml = ser_method!(ser_method_int) {
+    if let SerializationMethod::Yaml = ser_method {
         // N/A
     } else {
-        assert_eq!(db.get::<String>("num"), None);        
+        assert_eq!(db.get::<String>("num"), None);
         assert_eq!(read_db.get::<String>("num"), None);
     }
 
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn get_all_keys(ser_method_int: i32) {
-    test_setup!("get_all_keys", ser_method_int, db_name);
+fn get_all_keys(ser_method: SerializationMethod) {
+    test_setup!("get_all_keys", ser_method, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // insert 10 keys: key0..key9
     let num = 100;
@@ -331,17 +333,17 @@ fn get_all_keys(ser_method_int: i32) {
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn rem_keys(ser_method_int: i32) {
-    test_setup!("rem_keys", ser_method_int, db_name);
+fn rem_keys(ser_method: SerializationMethod) {
+    test_setup!("rem_keys", ser_method, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     // insert 10 keys: key0..key9
     let num = 100;
@@ -367,22 +369,22 @@ fn rem_keys(ser_method_int: i32) {
     }
 
     // verify keys were also removed from the file
-    let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load_read_only(&db_name, ser_method).unwrap();
     assert_eq!(read_db.total_keys(), 8);
 }
 
 #[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
+    ser_method,
+    case(SerializationMethod::Json),
+    case(SerializationMethod::Bin),
+    case(SerializationMethod::Yaml),
+    case(SerializationMethod::Cbor)
 )]
-fn iter_test(ser_method_int: i32) {
-    test_setup!("iter_test", ser_method_int, db_name);
+fn iter_test(ser_method: SerializationMethod) {
+    test_setup!("iter_test", ser_method, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method);
 
     let keys = vec!["key1", "key2", "key3", "key4", "key5"];
     // add a few keys and values

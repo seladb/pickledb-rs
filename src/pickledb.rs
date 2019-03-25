@@ -68,6 +68,7 @@ impl PickleDb {
             last_dump: Instant::now() }
     }
 
+    #[cfg(feature = "json")]
     /// Constructs a new `PickleDB` instance that uses [JSON serialization](https://crates.io/crates/serde_json) for storing the data.
     /// 
     /// # Arguments
@@ -88,6 +89,7 @@ impl PickleDb {
         PickleDb::new(db_path, dump_policy, SerializationMethod::Json)
     }
 
+    #[cfg(feature = "bincode")]
     /// Constructs a new `PickleDB` instance that uses [Bincode serialization](https://crates.io/crates/bincode) for storing the data.
     /// 
     /// # Arguments
@@ -108,6 +110,7 @@ impl PickleDb {
         PickleDb::new(db_path, dump_policy, SerializationMethod::Bin)
     }
 
+    #[cfg(feature = "yaml")]
     /// Constructs a new `PickleDB` instance that uses [YAML serialization](https://crates.io/crates/serde_yaml) for storing the data.
     /// 
     /// # Arguments
@@ -128,6 +131,7 @@ impl PickleDb {
         PickleDb::new(db_path, dump_policy, SerializationMethod::Yaml)
     }
 
+    #[cfg(feature = "cbor")]
     /// Constructs a new `PickleDB` instance that uses [CBOR serialization](https://crates.io/crates/serde_cbor) for storing the data.
     /// 
     /// # Arguments
@@ -206,6 +210,7 @@ impl PickleDb {
             })
     }
 
+    #[cfg(feature = "json")]
     /// Load a DB from a file stored in a Json format
     /// 
     /// This method tries to load a DB from a file serialized in Json format. Upon success an instance of `PickleDB` is returned, 
@@ -229,6 +234,7 @@ impl PickleDb {
         PickleDb::load(db_path, dump_policy, SerializationMethod::Json)
     }
 
+    #[cfg(feature = "bincode")]
     /// Load a DB from a file stored in Bincode format
     /// 
     /// This method tries to load a DB from a file serialized in Bincode format. Upon success an instance of `PickleDB` is returned, 
@@ -252,6 +258,7 @@ impl PickleDb {
         PickleDb::load(db_path, dump_policy, SerializationMethod::Bin)
     }
 
+    #[cfg(feature = "yaml")]
     /// Load a DB from a file stored in Yaml format
     /// 
     /// This method tries to load a DB from a file serialized in Yaml format. Upon success an instance of `PickleDB` is returned, 
@@ -275,6 +282,7 @@ impl PickleDb {
         PickleDb::load(db_path, dump_policy, SerializationMethod::Yaml)
     }
 
+    #[cfg(feature = "cbor")]
     /// Load a DB from a file stored in Cbor format
     /// 
     /// This method tries to load a DB from a file serialized in Cbor format. Upon success an instance of `PickleDB` is returned, 

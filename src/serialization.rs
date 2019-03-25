@@ -1,38 +1,31 @@
 use std::collections::HashMap;
 use std::fmt;
 use serde::{de::DeserializeOwned, Serialize};
+#[cfg(feature = "json")]
 use serde_json;
+#[cfg(feature = "bincode")]
 use bincode;
+#[cfg(feature = "yaml")]
 use serde_yaml;
+#[cfg(feature = "cbor")]
 use serde_cbor;
 
 /// An enum for specifying the serialization method to use when creating a new PickleDB database
 /// or loading one from a file 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum SerializationMethod {
+    #[cfg(feature = "json")]
     /// [JSON serialization](https://crates.io/crates/serde_json)
     Json,
-
+    #[cfg(feature = "bincode")]
     /// [Bincode serialization](https://crates.io/crates/bincode)
     Bin,
-
+    #[cfg(feature = "yaml")]
     /// [YAML serialization](https://crates.io/crates/serde_yaml)
     Yaml,
-
+    #[cfg(feature = "cbor")]
     /// [CBOR serialization](https://crates.io/crates/serde_cbor)
     Cbor
-}
-
-impl From<i32> for SerializationMethod {
-    fn from(item: i32) -> Self {
-        match item {
-            0 => SerializationMethod::Json,
-            1 => SerializationMethod::Bin,
-            2 => SerializationMethod::Yaml,
-            3 => SerializationMethod::Cbor,
-            _ => SerializationMethod::Json
-        }
-    }
 }
 
 impl fmt::Display for SerializationMethod {
@@ -42,8 +35,10 @@ impl fmt::Display for SerializationMethod {
 }
 
 
+#[cfg(feature = "json")]
 struct JsonSerializer { }
 
+#[cfg(feature = "json")]
 impl JsonSerializer {
     fn new() -> JsonSerializer {
         JsonSerializer {}
@@ -110,9 +105,12 @@ impl JsonSerializer {
 }
 
 
+#[cfg(feature = "yaml")]
 struct YamlSerializer { }
 
+#[cfg(feature = "yaml")]
 impl YamlSerializer {
+
     fn new() -> YamlSerializer {
         YamlSerializer {}
     }
@@ -178,8 +176,10 @@ impl YamlSerializer {
 }
 
 
+#[cfg(feature = "bincode")]
 struct BincodeSerializer { }
 
+#[cfg(feature = "bincode")]
 impl BincodeSerializer {
     fn new() -> BincodeSerializer {
         BincodeSerializer {}
@@ -218,8 +218,10 @@ impl BincodeSerializer {
 }
 
 
+#[cfg(feature = "cbor")]
 struct CborSerializer { }
 
+#[cfg(feature = "cbor")]
 impl CborSerializer {
     fn new() -> CborSerializer {
         CborSerializer {}
@@ -260,9 +262,13 @@ impl CborSerializer {
 
 pub(crate) struct Serializer {
     ser_method: SerializationMethod,
+    #[cfg(feature = "json")]
     json_serializer: JsonSerializer,
+    #[cfg(feature = "bincode")]
     bincode_serializer: BincodeSerializer,
+    #[cfg(feature = "yaml")]
     yaml_serializer: YamlSerializer,
+    #[cfg(feature = "cbor")]
     cbor_serializer: CborSerializer
 }
 
@@ -271,9 +277,13 @@ impl Serializer {
     pub(crate) fn new(ser_method: SerializationMethod) -> Serializer {
         Serializer {
             ser_method: ser_method,
+            #[cfg(feature = "json")]
             json_serializer: JsonSerializer::new(),
+            #[cfg(feature = "bincode")]
             bincode_serializer: BincodeSerializer::new(),
+            #[cfg(feature = "yaml")]
             yaml_serializer: YamlSerializer::new(),
+            #[cfg(feature = "cbor")]
             cbor_serializer: CborSerializer::new(),
         }
 
@@ -284,9 +294,13 @@ impl Serializer {
             V: DeserializeOwned    
     {
         match self.ser_method {
+            #[cfg(feature = "json")]
             SerializationMethod::Json => self.json_serializer.deserialize_data(ser_data),
+            #[cfg(feature = "bincode")]
             SerializationMethod::Bin => self.bincode_serializer.deserialize_data(ser_data),
+            #[cfg(feature = "yaml")]
             SerializationMethod::Yaml => self.yaml_serializer.deserialize_data(ser_data),
+            #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.deserialize_data(ser_data)
         }
     }
@@ -296,27 +310,39 @@ impl Serializer {
                 V: Serialize
     {
         match self.ser_method {
+            #[cfg(feature = "json")]
             SerializationMethod::Json => self.json_serializer.serialize_data(data),
+            #[cfg(feature = "bincode")]
             SerializationMethod::Bin => self.bincode_serializer.serialize_data(data),
+            #[cfg(feature = "yaml")]
             SerializationMethod::Yaml => self.yaml_serializer.serialize_data(data),
+            #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.serialize_data(data)
         }
     }
 
     pub(crate) fn serialize_db(&self, map: &HashMap<String, Vec<u8>>, list_map: &HashMap<String, Vec<Vec<u8>>>) -> Result<Vec<u8>, String> {
         match self.ser_method {
+            #[cfg(feature = "json")]
             SerializationMethod::Json => self.json_serializer.serialize_db(map, list_map),
+            #[cfg(feature = "bincode")]
             SerializationMethod::Bin => self.bincode_serializer.serialize_db(map, list_map),
+            #[cfg(feature = "yaml")]
             SerializationMethod::Yaml => self.yaml_serializer.serialize_db(map, list_map),
+            #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.serialize_db(map, list_map)
         }
     }
 
     pub(crate) fn deserialize_db(&self, ser_db: &[u8]) -> Result<(HashMap<String, Vec<u8>>, HashMap<String, Vec<Vec<u8>>>), String> {
         match self.ser_method {
+            #[cfg(feature = "json")]
             SerializationMethod::Json => self.json_serializer.deserialize_db(ser_db),
+            #[cfg(feature = "bincode")]
             SerializationMethod::Bin => self.bincode_serializer.deserialize_db(ser_db),
+            #[cfg(feature = "yaml")]
             SerializationMethod::Yaml => self.yaml_serializer.deserialize_db(ser_db),
+            #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.deserialize_db(ser_db)
         }
     }
