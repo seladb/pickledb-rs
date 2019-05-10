@@ -695,7 +695,7 @@ impl PickleDb {
     /// # Arguments
     ///
     /// * `name` - the list key
-    /// * `seq` - a vector containing the new items to add to the list
+    /// * `seq` - an iterator containing references to the new items to add to the list
     ///
     /// # Examples
     ///
@@ -715,16 +715,17 @@ impl PickleDb {
     /// // now the list contains 5 items and looks like this: [100, 200, 300, "my string", ["aa, "bb", "cc"]]
     /// ```
     ///
-    pub fn lextend<V>(&mut self, name: &str, seq: &[V]) -> Option<PickleDbListExtender>
+    pub fn lextend<'a, V, I>(&mut self, name: &str, seq: I) -> Option<PickleDbListExtender>
     where
-        V: Serialize,
+        V: 'a + Serialize,
+        I: IntoIterator<Item = &'a V>,
     {
         let serializer = &self.serializer;
         match self.list_map.get_mut(name) {
             Some(list) => {
                 let original_len = list.len();
                 let serialized: Vec<Vec<u8>> = seq
-                    .iter()
+                    .into_iter()
                     .map(|x| serializer.serialize_data(x).unwrap())
                     .collect();
                 list.extend(serialized);
