@@ -1,6 +1,6 @@
 //! An example of how to use lists in PickleDB. It includes:
 //! * Creating a new DB
-//! * Loading am existing DB from a file
+//! * Loading an existing DB from a file
 //! * Creating and removing lists
 //! * Adding and removing items of different type to lists
 //! * Retrieving list items

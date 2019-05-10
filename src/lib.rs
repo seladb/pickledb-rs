@@ -13,7 +13,7 @@
 //!
 //! Basically for any use case that needs a simple and relatively small key-value store that can run in-process and
 //! be stored in a file. Most of the key-value stores out there provide high scalability, performance and robustness, but in the cost of a very
-//! complex architecure, a lot of installation and configuration, and in many cases require a descent amount of resources.
+//! complex architecture, a lot of installation and configuration, and in many cases require a descent amount of resources.
 //! But sometimes you don't need this scalability and performance and all you need is a simple solution that can be easily set up and is easy to
 //! use and understand. That's where PickleDB-rs comes into the picture! I personally encountered several use cases like that and that's how I came
 //! to know about [Python's PickleDB](https://pythonhosted.org/pickleDB/), and I thought it'd be nice to build one in Rust as well.
@@ -44,7 +44,7 @@
 //! * Strings
 //! * Vectors
 //! * Tuples
-//! * Strcuts and Enums that are serializable (please read more below)
+//! * Structs and Enums that are serializable (please read more below)
 //!
 //! ## Serialization
 //!
@@ -93,7 +93,7 @@
 //!   [dump()](struct.PickleDb.html#method.dump) proactively to dump the data
 //! * [PickleDbDumpPolicy::PeriodicDump(Duration)](enum.PickleDbDumpPolicy.html#variant.PeriodicDump) - changes will be dumped to the file periodically,
 //!   no sooner than the Duration provided by the user. The way this mechanism works is as follows: each time there is a DB change the last DB dump time
-//!   is checked. If the time that has passed since the last dump is higher than Duration, changes will be dumped, otherwise changes will not be dumped.  
+//!   is checked. If the time that has passed since the last dump is higher than Duration, changes will be dumped, otherwise changes will not be dumped.
 //!
 //! Apart from this dump policy, persistency is also kept by a implementing the `Drop` trait for the `PickleDB` object which ensures all in-memory data
 //! is dumped to the file upon destruction of the object.

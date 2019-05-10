@@ -10,8 +10,8 @@ extern crate rstest;
 use rstest::rstest_parametrize;
 
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
-fn auto_dump_poilcy_test(ser_method_int: i32) {
-    test_setup!("auto_dump_poilcy_test", ser_method_int, db_name);
+fn auto_dump_policy_test(ser_method_int: i32) {
+    test_setup!("auto_dump_policy_test", ser_method_int, db_name);
 
     // create a DB with AutoDump policy
     let mut db = PickleDb::new(
