@@ -66,7 +66,7 @@ impl PickleDb {
             list_map: HashMap::new(),
             serializer: Serializer::new(serialization_method),
             db_file_path: db_path_buf,
-            dump_policy: dump_policy,
+            dump_policy,
             last_dump: Instant::now(),
         }
     }
@@ -205,9 +205,9 @@ impl PickleDb {
         Ok(PickleDb {
             map: maps_from_file.0,
             list_map: maps_from_file.1,
-            serializer: serializer,
+            serializer,
             db_file_path: db_path_buf,
-            dump_policy: dump_policy,
+            dump_policy,
             last_dump: Instant::now(),
         })
     }
@@ -471,7 +471,7 @@ impl PickleDb {
                     }
                 }
 
-                return Err(err);
+                Err(err)
             }
         }
     }
@@ -673,7 +673,7 @@ impl PickleDb {
     where
         V: Serialize,
     {
-        self.lextend(name, &vec![value])
+        self.lextend(name, &[value])
     }
 
     /// Add multiple items to an existing list.
@@ -715,7 +715,7 @@ impl PickleDb {
     /// // now the list contains 5 items and looks like this: [100, 200, 300, "my string", ["aa, "bb", "cc"]]
     /// ```
     ///
-    pub fn lextend<V>(&mut self, name: &str, seq: &Vec<V>) -> Option<PickleDbListExtender>
+    pub fn lextend<V>(&mut self, name: &str, seq: &[V]) -> Option<PickleDbListExtender>
     where
         V: Serialize,
     {
@@ -827,7 +827,7 @@ impl PickleDb {
                 Ok(_) => Ok(res),
                 Err(err) => {
                     self.list_map.insert(String::from(name), list);
-                    return Err(err);
+                    Err(err)
                 }
             },
             None => Ok(res),

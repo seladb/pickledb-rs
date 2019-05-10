@@ -13,8 +13,9 @@ os:
   - windows
 
 before_script:
-  - rustup component add rustfmt
+  - rustup component add rustfmt clippy
 
 script:
   - cargo fmt -- --check
   - cargo test
+  - cargo clippy --all-targets

@@ -71,7 +71,7 @@ impl<'a> PickleDbListExtender<'a> {
     /// // now the list contains 6 items and looks like this: [100, 200, 300, "aa, "bb", "cc"]
     /// ```
     ///
-    pub fn lextend<V>(&mut self, seq: &Vec<V>) -> PickleDbListExtender
+    pub fn lextend<V>(&mut self, seq: &[V]) -> PickleDbListExtender
     where
         V: Serialize,
     {

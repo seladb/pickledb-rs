@@ -63,7 +63,7 @@ fn main() {
         // add a vector of chars to the list
         .ladd(&vec!['a', 'b', 'c'])
         // add multiple values to the list: add 3 rectangles
-        .lextend(&vec![
+        .lextend(&[
             Rectangle {
                 width: 2,
                 length: 4,
@@ -106,7 +106,7 @@ fn main() {
     );
 
     // create a new list
-    db.lcreate("list2").unwrap().lextend(&vec![1, 2, 3, 4]);
+    db.lcreate("list2").unwrap().lextend(&[1, 2, 3, 4]);
 
     // iterate over the items in list2
     for item_iter in db.liter("list2") {

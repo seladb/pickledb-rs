@@ -49,7 +49,7 @@ fn auto_dump_poilcy_test(ser_method_int: i32) {
     }
 
     // add values to list
-    db.lextend("list1", &vec![1, 2, 3]);
+    db.lextend("list1", &[1, 2, 3]);
 
     // verify the change in the DB
     {

@@ -57,6 +57,7 @@ fn load_error_test() {
     assert!(matches!(load_result_err.get_type(), ErrorType::Io));
 }
 
+#[allow(clippy::cyclomatic_complexity)]
 #[test]
 fn dump_error_test() {
     set_test_rsc!("dump_error_test.db");
@@ -64,7 +65,7 @@ fn dump_error_test() {
     // I didn't find a way to effectively lock a file for writing on OS's
     // other than Windows. So until I find a solution I'm bypassing the test
     // for non-Windows OS's
-    if cfg!(target_os = "windows") == false {
+    if cfg!(not(target_os = "windows")) {
         return;
     }
 
@@ -76,7 +77,7 @@ fn dump_error_test() {
     db.set("float", &1.1).unwrap();
     db.set("string", &String::from("my string")).unwrap();
     db.set("vec", &vec![1, 2, 3]).unwrap();
-    db.lcreate("list1").unwrap().lextend(&vec![1, 2, 3]);
+    db.lcreate("list1").unwrap().lextend(&[1, 2, 3]);
 
     // lock the DB file so no more writes will be possible
     let db_file = File::open("dump_error_test.db").unwrap();
@@ -117,7 +118,7 @@ fn dump_error_test() {
     assert_eq!(db.llen("list1"), 3);
 
     // try lextend, confirm failure
-    let try_lextend = db.lextend("list1", &vec!["aa", "bb"]);
+    let try_lextend = db.lextend("list1", &["aa", "bb"]);
     assert!(try_lextend.is_none());
     // confirm list size is still the same
     assert_eq!(db.llen("list1"), 3);
