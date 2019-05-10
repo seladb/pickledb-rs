@@ -10,17 +10,15 @@ extern crate rstest;
 
 use rstest::rstest_parametrize;
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn basic_set_get(ser_method_int: i32) {
     test_setup!("basic_set_get", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // set a number
     let num = 100;
@@ -35,7 +33,7 @@ fn basic_set_get(ser_method_int: i32) {
     db.set("string", &mystr).unwrap();
 
     // set a Vec
-    let myvec = vec![1,2,3];
+    let myvec = vec![1, 2, 3];
     db.set("vec", &myvec).unwrap();
 
     // set a struct
@@ -44,10 +42,8 @@ fn basic_set_get(ser_method_int: i32) {
         x: i32,
         y: i32,
     }
-    let mycoor = Coor { x: 1, y
-    : 2 };
+    let mycoor = Coor { x: 1, y: 2 };
     db.set("struct", &mycoor).unwrap();
-
 
     // read a num
     assert_eq!(db.get::<i32>("num").unwrap(), num);
@@ -62,19 +58,16 @@ fn basic_set_get(ser_method_int: i32) {
     assert_eq!(db.get::<Coor>("struct").unwrap().y, mycoor.y);
 }
 
-
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn set_load_get(ser_method_int: i32) {
     test_setup!("set_load_get", ser_method_int, db_name);
 
     // create a db with auto_dump == false
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::DumpUponRequest,
+        ser_method!(ser_method_int),
+    );
 
     // set a number
     let num = 100;
@@ -89,7 +82,7 @@ fn set_load_get(ser_method_int: i32) {
     db.set("string", &mystr).unwrap();
 
     // set a Vec
-    let myvec = vec![1,2,3];
+    let myvec = vec![1, 2, 3];
     db.set("vec", &myvec).unwrap();
 
     // set a struct
@@ -98,10 +91,8 @@ fn set_load_get(ser_method_int: i32) {
         x: i32,
         y: i32,
     }
-    let mycoor = Coor { x: 1, y
-    : 2 };
+    let mycoor = Coor { x: 1, y: 2 };
     db.set("struct", &mycoor).unwrap();
-
 
     // dump db to file
     assert!(db.dump().is_ok());
@@ -122,19 +113,16 @@ fn set_load_get(ser_method_int: i32) {
     assert_eq!(read_db.get::<Coor>("struct").unwrap().y, mycoor.y);
 }
 
-
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn set_load_get_auto_dump(ser_method_int: i32) {
     test_setup!("set_load_get_auto_dump", ser_method_int, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // set a number
     let num = 100;
@@ -149,7 +137,7 @@ fn set_load_get_auto_dump(ser_method_int: i32) {
     db.set("string", &mystr).unwrap();
 
     // set a Vec
-    let myvec = vec![1,2,3];
+    let myvec = vec![1, 2, 3];
     db.set("vec", &myvec).unwrap();
 
     // set a struct
@@ -158,10 +146,8 @@ fn set_load_get_auto_dump(ser_method_int: i32) {
         x: i32,
         y: i32,
     }
-    let mycoor = Coor { x: 1, y
-    : 2 };
+    let mycoor = Coor { x: 1, y: 2 };
     db.set("struct", &mycoor).unwrap();
-
 
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
 
@@ -178,18 +164,16 @@ fn set_load_get_auto_dump(ser_method_int: i32) {
     assert_eq!(read_db.get::<Coor>("struct").unwrap().y, mycoor.y);
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn set_load_get_auto_dump2(ser_method_int: i32) {
     test_setup!("set_load_get_auto_dump2", ser_method_int, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // set a number
     let num = 100;
@@ -222,7 +206,7 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
     }
 
     // set a different value of a different type for a given key
-    db.set("num", &vec![1,2,3]).unwrap();
+    db.set("num", &vec![1, 2, 3]).unwrap();
 
     // read the new value
     if let SerializationMethod::Bin = ser_method!(ser_method_int) {
@@ -230,54 +214,70 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
     } else {
         assert!(db.get::<i32>("num").is_none());
     }
-    assert_eq!(db.get::<Vec<i32>>("num").unwrap(), vec![1,2,3]);
+    assert_eq!(db.get::<Vec<i32>>("num").unwrap(), vec![1, 2, 3]);
     {
         let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
-        assert_eq!(read_db.get::<Vec<i32>>("num").unwrap(), vec![1,2,3]);
+        assert_eq!(read_db.get::<Vec<i32>>("num").unwrap(), vec![1, 2, 3]);
     }
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn set_special_strings(ser_method_int: i32) {
     test_setup!("set_special_strings", ser_method_int, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
-    db.set("string1", &String::from("\"dobule_quotes\"")).unwrap();
-    db.set("string2", &String::from("\'single_quotes\'")).unwrap();
+    db.set("string1", &String::from("\"dobule_quotes\""))
+        .unwrap();
+    db.set("string2", &String::from("\'single_quotes\'"))
+        .unwrap();
     db.set("string3", &String::from("שָׁלוֹם")).unwrap();
     db.set("string4", &String::from("😻")).unwrap();
     db.set("string5", &String::from("\nescapes\t\r")).unwrap();
     db.set("string6", &String::from("my\\folder")).unwrap();
 
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
-    assert_eq!(read_db.get::<String>("string1").unwrap(), String::from("\"dobule_quotes\""));
-    assert_eq!(read_db.get::<String>("string2").unwrap(), String::from("\'single_quotes\'"));
-    assert_eq!(read_db.get::<String>("string3").unwrap(), String::from("שָׁלוֹם"));
-    assert_eq!(read_db.get::<String>("string4").unwrap(), String::from("😻"));
-    assert_eq!(read_db.get::<String>("string5").unwrap(), String::from("\nescapes\t\r"));
-    assert_eq!(read_db.get::<String>("string6").unwrap(), String::from("my\\folder"));
+    assert_eq!(
+        read_db.get::<String>("string1").unwrap(),
+        String::from("\"dobule_quotes\"")
+    );
+    assert_eq!(
+        read_db.get::<String>("string2").unwrap(),
+        String::from("\'single_quotes\'")
+    );
+    assert_eq!(
+        read_db.get::<String>("string3").unwrap(),
+        String::from("שָׁלוֹם")
+    );
+    assert_eq!(
+        read_db.get::<String>("string4").unwrap(),
+        String::from("😻")
+    );
+    assert_eq!(
+        read_db.get::<String>("string5").unwrap(),
+        String::from("\nescapes\t\r")
+    );
+    assert_eq!(
+        read_db.get::<String>("string6").unwrap(),
+        String::from("my\\folder")
+    );
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn edge_cases(ser_method_int: i32) {
     test_setup!("edge_cases", ser_method_int, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     let x = 123;
     db.set("num", &x).unwrap();
@@ -290,24 +290,21 @@ fn edge_cases(ser_method_int: i32) {
     if let SerializationMethod::Yaml = ser_method!(ser_method_int) {
         // N/A
     } else {
-        assert_eq!(db.get::<String>("num"), None);        
+        assert_eq!(db.get::<String>("num"), None);
         assert_eq!(read_db.get::<String>("num"), None);
     }
-
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn get_all_keys(ser_method_int: i32) {
     test_setup!("get_all_keys", ser_method_int, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // insert 10 keys: key0..key9
     let num = 100;
@@ -330,18 +327,16 @@ fn get_all_keys(ser_method_int: i32) {
     }
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn rem_keys(ser_method_int: i32) {
     test_setup!("rem_keys", ser_method_int, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // insert 10 keys: key0..key9
     let num = 100;
@@ -357,12 +352,12 @@ fn rem_keys(ser_method_int: i32) {
     assert_eq!(db.total_keys(), 8);
 
     // verify both keys were removed
-    for i in vec![5,8].iter() {
+    for i in vec![5, 8].iter() {
         assert_eq!(db.exists(&format!("{}{}", "key", i)), false);
     }
 
     // verify the other keys are still there
-    for i in vec![0,1,2,3,4,6,7,9].iter() {
+    for i in vec![0, 1, 2, 3, 4, 6, 7, 9].iter() {
         assert!(db.exists(&format!("{}{}", "key", i)));
     }
 
@@ -371,31 +366,28 @@ fn rem_keys(ser_method_int: i32) {
     assert_eq!(read_db.total_keys(), 8);
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn iter_test(ser_method_int: i32) {
     test_setup!("iter_test", ser_method_int, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     let keys = vec!["key1", "key2", "key3", "key4", "key5"];
     // add a few keys and values
     db.set(keys[0], &1).unwrap();
     db.set(keys[1], &1.1).unwrap();
     db.set(keys[2], &String::from("value1")).unwrap();
-    db.set(keys[3], &vec![1,2,3]).unwrap();
+    db.set(keys[3], &vec![1, 2, 3]).unwrap();
     db.set(keys[4], &('a', 'b', 'c')).unwrap();
 
     // iterate the db
     let mut keys_seen = vec![false, false, false, false, false];
     for key_value in db.iter() {
-
         // find the index of the current key in the keys vec
         let index = keys.iter().position(|&k| k == key_value.get_key()).unwrap();
 
@@ -406,14 +398,19 @@ fn iter_test(ser_method_int: i32) {
         match key_value.get_key() {
             "key1" => assert_eq!(key_value.get_value::<i32>().unwrap(), 1),
             "key2" => assert_eq!(key_value.get_value::<f64>().unwrap(), 1.1),
-            "key3" => assert_eq!(key_value.get_value::<String>().unwrap(), String::from("value1")),
-            "key4" => assert_eq!(key_value.get_value::<Vec<i32>>().unwrap(), vec![1,2,3]),
-            "key5" => assert_eq!(key_value.get_value::<(char, char, char)>().unwrap(), ('a', 'b', 'c')),
-            _ => assert!(false)
+            "key3" => assert_eq!(
+                key_value.get_value::<String>().unwrap(),
+                String::from("value1")
+            ),
+            "key4" => assert_eq!(key_value.get_value::<Vec<i32>>().unwrap(), vec![1, 2, 3]),
+            "key5" => assert_eq!(
+                key_value.get_value::<(char, char, char)>().unwrap(),
+                ('a', 'b', 'c')
+            ),
+            _ => assert!(false),
         }
     }
 
     // verify all 5 keys were seen
     assert_eq!(keys_seen.iter().filter(|&t| *t == true).count(), 5);
 }
-

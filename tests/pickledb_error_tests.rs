@@ -1,5 +1,5 @@
-use pickledb::{PickleDb, PickleDbDumpPolicy};
 use pickledb::error::ErrorType;
+use pickledb::{PickleDb, PickleDbDumpPolicy};
 
 #[macro_use(matches)]
 extern crate matches;
@@ -21,20 +21,26 @@ fn load_serialization_error_test() {
     db.set("num", &100).unwrap();
     db.set("float", &1.1).unwrap();
     db.set("string", &String::from("my string")).unwrap();
-    db.set("vec", &vec![1,2,3]).unwrap();
+    db.set("vec", &vec![1, 2, 3]).unwrap();
 
     // try to load the same DB with Bincode serialization, should fail
     let load_as_bin = PickleDb::load_bin("json_db.db", PickleDbDumpPolicy::NeverDump);
     assert!(load_as_bin.is_err());
     let load_as_bin_err = load_as_bin.err().unwrap();
-    assert!(matches!(load_as_bin_err.get_type(), ErrorType::Serialization));
+    assert!(matches!(
+        load_as_bin_err.get_type(),
+        ErrorType::Serialization
+    ));
     assert_eq!(load_as_bin_err.to_string(), "Cannot deserialize DB");
 
     // try to load the same DB with CBOR serialization, should fail
     let load_as_cbor = PickleDb::load_cbor("json_db.db", PickleDbDumpPolicy::NeverDump);
     assert!(load_as_cbor.is_err());
     let load_as_cbor_err = load_as_cbor.err().unwrap();
-    assert!(matches!(load_as_cbor_err.get_type(), ErrorType::Serialization));
+    assert!(matches!(
+        load_as_cbor_err.get_type(),
+        ErrorType::Serialization
+    ));
     assert_eq!(load_as_cbor_err.to_string(), "Cannot deserialize DB");
 
     // try to load the same DB with Yaml serialization, should not fail because YAML is
@@ -44,7 +50,6 @@ fn load_serialization_error_test() {
 
 #[test]
 fn load_error_test() {
-
     // load a file that doesn't exist and make sure we get an IO error
     let load_result = PickleDb::load_bin("doesnt_exists.db", PickleDbDumpPolicy::NeverDump);
     assert!(load_result.is_err());
@@ -60,7 +65,7 @@ fn dump_error_test() {
     // other than Windows. So until I find a solution I'm bypassing the test
     // for non-Windows OS's
     if cfg!(target_os = "windows") == false {
-        return
+        return;
     }
 
     // create a new DB with Json serialization
@@ -70,9 +75,8 @@ fn dump_error_test() {
     db.set("num", &100).unwrap();
     db.set("float", &1.1).unwrap();
     db.set("string", &String::from("my string")).unwrap();
-    db.set("vec", &vec![1,2,3]).unwrap();
-    db.lcreate("list1").unwrap()
-      .lextend(&vec![1,2,3]);
+    db.set("vec", &vec![1, 2, 3]).unwrap();
+    db.lcreate("list1").unwrap().lextend(&vec![1, 2, 3]);
 
     // lock the DB file so no more writes will be possible
     let db_file = File::open("dump_error_test.db").unwrap();
@@ -142,5 +146,4 @@ fn dump_error_test() {
 
     // unlock the file
     db_file.unlock().unwrap();
-
 }

@@ -9,18 +9,16 @@ extern crate rstest;
 
 use rstest::rstest_parametrize;
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn auto_dump_poilcy_test(ser_method_int: i32) {
     test_setup!("auto_dump_poilcy_test", ser_method_int, db_name);
 
     // create a DB with AutoDump policy
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // set a key-value pair
     assert!(db.set("key1", &1).is_ok());
@@ -51,7 +49,7 @@ fn auto_dump_poilcy_test(ser_method_int: i32) {
     }
 
     // add values to list
-    db.lextend("list1", &vec![1,2,3]);
+    db.lextend("list1", &vec![1, 2, 3]);
 
     // verify the change in the DB
     {
@@ -87,18 +85,16 @@ fn auto_dump_poilcy_test(ser_method_int: i32) {
     }
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn read_only_policy_test(ser_method_int: i32) {
     test_setup!("read_only_policy_test", ser_method_int, db_name);
 
     // create a DB and set a value
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
     assert!(db.set("key1", &String::from("value1")).is_ok());
 
     // create a read only instance of the same DB
@@ -136,18 +132,16 @@ fn read_only_policy_test(ser_method_int: i32) {
     }
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn dump_upon_request_policy_test(ser_method_int: i32) {
     test_setup!("dump_upon_request_policy_test", ser_method_int, db_name);
 
     // create a DB and set a value
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::DumpUponRequest,
+        ser_method!(ser_method_int),
+    );
     assert!(db.set("key1", &String::from("value1")).is_ok());
 
     // verify file is not yet created
@@ -176,18 +170,16 @@ fn dump_upon_request_policy_test(ser_method_int: i32) {
     }
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn periodic_dump_policy_test(ser_method_int: i32) {
     test_setup!("periodic_dump_policy_test", ser_method_int, db_name);
 
     // create a DB and set a value
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::PeriodicDump(Duration::new(1, 0)), ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::PeriodicDump(Duration::new(1, 0)),
+        ser_method!(ser_method_int),
+    );
     assert!(db.set("key1", &String::from("value1")).is_ok());
 
     // verify file is not yet created
