@@ -28,3 +28,11 @@ rand = "0.6.3"
 rstest = "0.2.2"
 matches = "0.1.8"
 fs2 = "0.4.3"
+
+[[example]]
+name = "hello_world"
+path = "examples/hello_world/src/main.rs"
+
+[[example]]
+name = "lists"
+path = "examples/lists/src/main.rs"
