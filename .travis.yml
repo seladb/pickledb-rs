@@ -14,7 +14,13 @@ os:
 
 before_script:
   - rustup component add rustfmt
+  - if [[ ${TRAVIS_RUST_VERSION} == stable ]]; then
+      rustup component add clippy;
+    fi
 
 script:
   - cargo fmt -- --check
   - cargo test
+  - if [[ ${TRAVIS_RUST_VERSION} == stable ]]; then
+      cargo clippy --all-targets -- --deny clippy::all;
+    fi

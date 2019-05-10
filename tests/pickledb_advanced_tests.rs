@@ -30,7 +30,7 @@ fn lists_and_values(ser_method_int: i32) {
     assert!(db.set("key3", &vec![1, 2, 3]).is_ok());
 
     // create a few lists and add values to them
-    db.lcreate("list1").unwrap().lextend(&vec![1, 2, 3]);
+    db.lcreate("list1").unwrap().lextend(&[1, 2, 3]);
 
     db.lcreate("list2")
         .unwrap()
@@ -38,6 +38,7 @@ fn lists_and_values(ser_method_int: i32) {
         .ladd(&String::from("some val"));
 
     // read keys and lists
+    #[allow(clippy::float_cmp)]
     {
         let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert_eq!(read_db.get::<String>("key1").unwrap(), String::from("val1"));
@@ -113,19 +114,19 @@ fn load_test(ser_method_int: i32) {
             1 => {
                 // add a i32 value
                 db.set(&key, &rng.gen::<i32>()).unwrap();
-                map.insert(String::from(key), "i32");
+                map.insert(key, "i32");
             }
             2 => {
                 // add a f32 value
                 db.set(&key, &rng.gen::<f32>()).unwrap();
-                map.insert(String::from(key), "f32");
+                map.insert(key, "f32");
             }
             3 => {
                 // add a String value
                 let val_size = rng.gen_range(1, 50);
                 db.set(&key, &gen_random_string(&mut rng, val_size))
                     .unwrap();
-                map.insert(String::from(key), "string");
+                map.insert(key, "string");
             }
             4 => {
                 // add a Vec<i32> value
@@ -138,7 +139,7 @@ fn load_test(ser_method_int: i32) {
                     vec.push(rng.gen::<i32>());
                 }
                 db.set(&key, &vec).unwrap();
-                map.insert(String::from(key), "vec");
+                map.insert(key, "vec");
             }
             5 => {
                 // add a List value
@@ -150,7 +151,7 @@ fn load_test(ser_method_int: i32) {
                 // create the list
                 db.lcreate(&list_key).unwrap();
 
-                map.insert(String::from(list_key.clone()), "list");
+                map.insert(list_key.clone(), "list");
 
                 // randomize list size 1..50
                 let list_size: u32 = rng.gen_range(1, 50);
@@ -214,12 +215,12 @@ fn load_test(ser_method_int: i32) {
         );
 
         // get the value according to the value_type saved
-        match val_type {
-            &"i32" => assert!(read_db.get::<i32>(&key).is_some()),
-            &"f32" => assert!(read_db.get::<f32>(&key).is_some()),
-            &"string" => assert!(read_db.get::<String>(&key).is_some()),
-            &"vec" => assert!(read_db.get::<Vec<i32>>(&key).is_some()),
-            &"list" => assert!(read_db.lexists(&key)),
+        match *val_type {
+            "i32" => assert!(read_db.get::<i32>(&key).is_some()),
+            "f32" => assert!(read_db.get::<f32>(&key).is_some()),
+            "string" => assert!(read_db.get::<String>(&key).is_some()),
+            "vec" => assert!(read_db.get::<Vec<i32>>(&key).is_some()),
+            "list" => assert!(read_db.lexists(&key)),
             _ => (),
         }
     }
