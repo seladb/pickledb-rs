@@ -13,6 +13,4 @@ os:
   - windows
 
 script:
-- cargo test
-- cargo build --manifest-path=examples/hello_world/Cargo.toml
-- cargo build --manifest-path=examples/lists/Cargo.toml
+  - cargo test
