@@ -4,11 +4,9 @@
 //! * Creating and removing lists
 //! * Adding and removing items of different type to lists
 //! * Retrieving list items
-//!
-#[macro_use]
-extern crate serde_derive;
 
 use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
+use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display, Formatter};
 
 /// Define an example struct which represents a rectangle.
