@@ -1,4 +1,4 @@
-use pickledb::{PickleDb,PickleDbDumpPolicy, SerializationMethod};
+use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 
 mod common;
 
@@ -10,17 +10,15 @@ extern crate rstest;
 
 use rstest::rstest_parametrize;
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn basic_lists(ser_method_int: i32) {
     test_setup!("basic_lists", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     db.lcreate("list1").unwrap();
 
@@ -37,7 +35,7 @@ fn basic_lists(ser_method_int: i32) {
     assert!(db.ladd("list1", &mystr).is_some());
 
     // add a Vec to list1
-    let myvec = vec![1,2,3];
+    let myvec = vec![1, 2, 3];
     assert!(db.ladd("list1", &myvec).is_some());
 
     // add a struct to list1
@@ -46,8 +44,7 @@ fn basic_lists(ser_method_int: i32) {
         x: i32,
         y: i32,
     }
-    let mycoor = Coor { x: 1, y
-    : 2 };
+    let mycoor = Coor { x: 1, y: 2 };
     assert!(db.ladd("list1", &mycoor).is_some());
 
     // create another list
@@ -60,7 +57,6 @@ fn basic_lists(ser_method_int: i32) {
     // add a string to list2
     let mystr2 = String::from("hello world");
     assert!(db.ladd("list2", &mystr2).is_some());
-
 
     // read first item in list1 - int
     assert_eq!(db.lget::<i32>("list1", 0).unwrap(), num);
@@ -90,9 +86,13 @@ fn basic_lists(ser_method_int: i32) {
     // list that doesn't exist
     assert_eq!(db.llen("list3"), 0);
 
-
     // load the file as read only db
-    let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load(
+        &db_name,
+        PickleDbDumpPolicy::NeverDump,
+        ser_method!(ser_method_int),
+    )
+    .unwrap();
 
     // verify lists length
     assert_eq!(read_db.llen("list1"), 5);
@@ -121,17 +121,15 @@ fn basic_lists(ser_method_int: i32) {
     assert_eq!(read_db.lget::<Coor>("list1", 4).unwrap().y, mycoor.y);
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn add_and_extend_lists(ser_method_int: i32) {
     test_setup!("add_and_extend_lists", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // create 3 lists
     db.lcreate("list1").unwrap();
@@ -139,10 +137,11 @@ fn add_and_extend_lists(ser_method_int: i32) {
     db.lcreate("list3").unwrap();
 
     // list1 - add 6 elements using lextend
-    assert!(db.lextend("list1", &vec![1,2,3,4,5,6]).is_some());
+    assert!(db.lextend("list1", &vec![1, 2, 3, 4, 5, 6]).is_some());
 
     // list1 - add 6 elements using ladd
-    db.ladd("list2", &1).unwrap()
+    db.ladd("list2", &1)
+        .unwrap()
         .ladd(&2)
         .ladd(&3)
         .ladd(&4)
@@ -150,10 +149,11 @@ fn add_and_extend_lists(ser_method_int: i32) {
         .ladd(&6);
 
     // list3 - add 6 elements using lextend and ladd
-    db.ladd("list3", &1).unwrap()
-        .lextend(&vec![2,3])
+    db.ladd("list3", &1)
+        .unwrap()
+        .lextend(&vec![2, 3])
         .ladd(&4)
-        .lextend(&vec![5,6]);
+        .lextend(&vec![5, 6]);
 
     // verify lists length
     assert_eq!(db.llen("list1"), 6);
@@ -162,37 +162,41 @@ fn add_and_extend_lists(ser_method_int: i32) {
 
     // check all values in all lists
     for x in 0..5 {
-        assert_eq!(db.lget::<i32>("list1", x as usize).unwrap(), x+1);
-        assert_eq!(db.lget::<i32>("list2", x as usize).unwrap(), x+1);
-        assert_eq!(db.lget::<i32>("list3", x as usize).unwrap(), x+1);
+        assert_eq!(db.lget::<i32>("list1", x as usize).unwrap(), x + 1);
+        assert_eq!(db.lget::<i32>("list2", x as usize).unwrap(), x + 1);
+        assert_eq!(db.lget::<i32>("list3", x as usize).unwrap(), x + 1);
     }
 
     // read db from file
-    let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+    let read_db = PickleDb::load(
+        &db_name,
+        PickleDbDumpPolicy::NeverDump,
+        ser_method!(ser_method_int),
+    )
+    .unwrap();
 
     // check all values in all lists
     for x in 0..5 {
-        assert_eq!(read_db.lget::<i32>("list1", x as usize).unwrap(), x+1);
-        assert_eq!(read_db.lget::<i32>("list2", x as usize).unwrap(), x+1);
-        assert_eq!(read_db.lget::<i32>("list3", x as usize).unwrap(), x+1);
+        assert_eq!(read_db.lget::<i32>("list1", x as usize).unwrap(), x + 1);
+        assert_eq!(read_db.lget::<i32>("list2", x as usize).unwrap(), x + 1);
+        assert_eq!(read_db.lget::<i32>("list3", x as usize).unwrap(), x + 1);
     }
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn override_lists(ser_method_int: i32) {
     test_setup!("override_lists", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // create a list and add some values to it
-    db.lcreate("list1").unwrap()
-      .lextend(&vec!["aa", "bb", "cc"]);
+    db.lcreate("list1")
+        .unwrap()
+        .lextend(&vec!["aa", "bb", "cc"]);
 
     // verify list len is 3
     assert_eq!(db.llen("list1"), 3);
@@ -206,13 +210,18 @@ fn override_lists(ser_method_int: i32) {
 
     // read the list from file and verify the same
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(
+            &db_name,
+            PickleDbDumpPolicy::NeverDump,
+            ser_method!(ser_method_int),
+        )
+        .unwrap();
         assert!(read_db.lexists("list1"));
         assert_eq!(read_db.llen("list1"), 0);
     }
 
     // add items to the override list
-    assert!(db.lextend("list1", &vec![1,2,3,4]).is_some());
+    assert!(db.lextend("list1", &vec![1, 2, 3, 4]).is_some());
 
     // verify list contains the new data
     assert!(db.lexists("list1"));
@@ -220,28 +229,32 @@ fn override_lists(ser_method_int: i32) {
 
     // read the list from file and verify the same
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(
+            &db_name,
+            PickleDbDumpPolicy::NeverDump,
+            ser_method!(ser_method_int),
+        )
+        .unwrap();
         assert!(read_db.lexists("list1"));
         assert_eq!(read_db.llen("list1"), 4);
     }
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn lget_corner_cases(ser_method_int: i32) {
     test_setup!("lget_corner_cases", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::DumpUponRequest,
+        ser_method!(ser_method_int),
+    );
 
     // create a list and add some values
-    db.lcreate("list1").unwrap()
-      .lextend(&vec!["hello", "world", "good", "morning"])
-      .ladd(&100);
+    db.lcreate("list1")
+        .unwrap()
+        .lextend(&vec!["hello", "world", "good", "morning"])
+        .ladd(&100);
 
     // lget values that exist
     assert_eq!(db.lget::<String>("list1", 0).unwrap(), "hello");
@@ -256,13 +269,11 @@ fn lget_corner_cases(ser_method_int: i32) {
 
         if let SerializationMethod::Yaml = ser_method!(ser_method_int) {
             // N/A
-        }
-        else {
+        } else {
             assert!(db.lget::<String>("list1", 4).is_none());
         }
-        
     }
-    
+
     // lget values out of bounds
     assert!(db.lget::<i32>("list1", 5).is_none());
     assert!(db.lget::<String>("list1", 5).is_none());
@@ -271,20 +282,18 @@ fn lget_corner_cases(ser_method_int: i32) {
     assert!(db.lget::<i32>("list2", 5).is_none());
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn add_to_non_existent_list(ser_method_int: i32) {
     test_setup!("lget_corner_cases", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::DumpUponRequest,
+        ser_method!(ser_method_int),
+    );
 
     let num = 100;
-    let vec_of_nums = vec![1,2,3];
+    let vec_of_nums = vec![1, 2, 3];
 
     // add items to list that doesn't exist
     assert!(db.ladd("list1", &num).is_none());
@@ -309,34 +318,41 @@ fn add_to_non_existent_list(ser_method_int: i32) {
     assert!(db.lextend("list1", &vec_of_nums).is_none());
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn remove_list(ser_method_int: i32) {
     test_setup!("remove_list", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // create some lists add add values to them
-    db.lcreate("list1").unwrap()
-      .lextend(&vec![1,2,3,4,5,6,7,8,9,10]);
+    db.lcreate("list1")
+        .unwrap()
+        .lextend(&vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
-    db.lcreate("list2").unwrap()
-      .lextend(&vec!['a', 'b', 'c', 'd', 'e']);
+    db.lcreate("list2")
+        .unwrap()
+        .lextend(&vec!['a', 'b', 'c', 'd', 'e']);
 
-    db.lcreate("list3").unwrap()
-      .lextend(&vec![1.2, 1.3, 2.1, 3.1, 3.3, 7.889]);
+    db.lcreate("list3")
+        .unwrap()
+        .lextend(&vec![1.2, 1.3, 2.1, 3.1, 3.3, 7.889]);
 
-    db.lcreate("list4").unwrap()
-      .lextend(&vec!["aaa", "bbb", "ccc", "ddd", "eee"]);
+    db.lcreate("list4")
+        .unwrap()
+        .lextend(&vec!["aaa", "bbb", "ccc", "ddd", "eee"]);
 
     // verify number of lists in file
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(
+            &db_name,
+            PickleDbDumpPolicy::NeverDump,
+            ser_method!(ser_method_int),
+        )
+        .unwrap();
         assert_eq!(read_db.total_keys(), 4);
     }
 
@@ -348,10 +364,14 @@ fn remove_list(ser_method_int: i32) {
 
     // verify number of lists in file
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(
+            &db_name,
+            PickleDbDumpPolicy::NeverDump,
+            ser_method!(ser_method_int),
+        )
+        .unwrap();
         assert_eq!(read_db.total_keys(), 3);
     }
-
 
     // remove list1 using lrem_list
     assert_eq!(db.lrem_list("list3").unwrap_or(0), 6);
@@ -361,22 +381,25 @@ fn remove_list(ser_method_int: i32) {
 
     // verify number of lists in file
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(
+            &db_name,
+            PickleDbDumpPolicy::NeverDump,
+            ser_method!(ser_method_int),
+        )
+        .unwrap();
         assert_eq!(read_db.total_keys(), 2);
     }
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn remove_values_from_list(ser_method_int: i32) {
     test_setup!("remove_values_from_list", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // add a struct to list1
     #[derive(Serialize, Deserialize, Debug)]
@@ -385,11 +408,12 @@ fn remove_values_from_list(ser_method_int: i32) {
     }
 
     // create a list and add some values
-    db.lcreate("list1").unwrap()
-      .lextend(&vec![1,2,3])
-      .ladd(&String::from("hello"))
-      .ladd(&1.234)
-      .lextend(&vec![MySquare { x: 4 }, MySquare { x: 10 }]);
+    db.lcreate("list1")
+        .unwrap()
+        .lextend(&vec![1, 2, 3])
+        .ladd(&String::from("hello"))
+        .ladd(&1.234)
+        .lextend(&vec![MySquare { x: 4 }, MySquare { x: 10 }]);
 
     // list now looks like this:
     // Indices: [0, 1, 2, 3,       4,     5,           6           ]
@@ -407,7 +431,12 @@ fn remove_values_from_list(ser_method_int: i32) {
 
     // read this from file as well
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(
+            &db_name,
+            PickleDbDumpPolicy::NeverDump,
+            ser_method!(ser_method_int),
+        )
+        .unwrap();
         assert_eq!(read_db.lget::<MySquare>("list1", 4).unwrap().x, 4);
         assert_eq!(read_db.lget::<String>("list1", 3).unwrap(), "hello");
     }
@@ -423,7 +452,9 @@ fn remove_values_from_list(ser_method_int: i32) {
     assert_eq!(db.lget::<i32>("list1", 1).unwrap(), 3);
 
     // remove the "hello" string
-    assert!(db.lrem_value("list1", &String::from("hello")).unwrap_or(false));
+    assert!(db
+        .lrem_value("list1", &String::from("hello"))
+        .unwrap_or(false));
 
     // list now looks like this:
     // Indices: [0, 1, 2,           3           ]
@@ -434,7 +465,12 @@ fn remove_values_from_list(ser_method_int: i32) {
 
     // read this from file as well
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(
+            &db_name,
+            PickleDbDumpPolicy::NeverDump,
+            ser_method!(ser_method_int),
+        )
+        .unwrap();
         assert_eq!(read_db.lget::<MySquare>("list1", 3).unwrap().x, 10);
         assert_eq!(read_db.lget::<i32>("list1", 1).unwrap(), 3);
     }
@@ -451,75 +487,117 @@ fn remove_values_from_list(ser_method_int: i32) {
 
     // read this from file as well
     {
-        let read_db = PickleDb::load(&db_name, PickleDbDumpPolicy::NeverDump, ser_method!(ser_method_int)).unwrap();
+        let read_db = PickleDb::load(
+            &db_name,
+            PickleDbDumpPolicy::NeverDump,
+            ser_method!(ser_method_int),
+        )
+        .unwrap();
         assert_eq!(read_db.lget::<MySquare>("list1", 2).unwrap().x, 10);
         assert_eq!(read_db.lget::<i32>("list1", 0).unwrap(), 2);
     }
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn list_with_special_strings(ser_method_int: i32) {
     test_setup!("list_with_special_strings", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // create a list and add special strings to it
-    db.lcreate("list1").unwrap()
-      .ladd(&String::from("\"dobule_quotes\""))
-      .ladd(&String::from("\'single_quotes\'"))
-      .ladd(&String::from("שָׁלוֹם"))
-      .ladd(&String::from("😻"))
-      .ladd(&String::from("\nescapes\t\r"))
-      .ladd(&String::from("my\\folder"));
- 
+    db.lcreate("list1")
+        .unwrap()
+        .ladd(&String::from("\"dobule_quotes\""))
+        .ladd(&String::from("\'single_quotes\'"))
+        .ladd(&String::from("שָׁלוֹם"))
+        .ladd(&String::from("😻"))
+        .ladd(&String::from("\nescapes\t\r"))
+        .ladd(&String::from("my\\folder"));
+
     // read special strings
-    assert_eq!(db.lget::<String>("list1", 0).unwrap(), String::from("\"dobule_quotes\""));
-    assert_eq!(db.lget::<String>("list1", 1).unwrap(), String::from("\'single_quotes\'"));
-    assert_eq!(db.lget::<String>("list1", 2).unwrap(), String::from("שָׁלוֹם"));
+    assert_eq!(
+        db.lget::<String>("list1", 0).unwrap(),
+        String::from("\"dobule_quotes\"")
+    );
+    assert_eq!(
+        db.lget::<String>("list1", 1).unwrap(),
+        String::from("\'single_quotes\'")
+    );
+    assert_eq!(
+        db.lget::<String>("list1", 2).unwrap(),
+        String::from("שָׁלוֹם")
+    );
     assert_eq!(db.lget::<String>("list1", 3).unwrap(), String::from("😻"));
-    assert_eq!(db.lget::<String>("list1", 4).unwrap(), String::from("\nescapes\t\r"));
-    assert_eq!(db.lget::<String>("list1", 5).unwrap(), String::from("my\\folder"));
+    assert_eq!(
+        db.lget::<String>("list1", 4).unwrap(),
+        String::from("\nescapes\t\r")
+    );
+    assert_eq!(
+        db.lget::<String>("list1", 5).unwrap(),
+        String::from("my\\folder")
+    );
 
     // load db from file
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
 
     // read strgins from list loaded from file
-    assert_eq!(read_db.lget::<String>("list1", 0).unwrap(), String::from("\"dobule_quotes\""));
-    assert_eq!(read_db.lget::<String>("list1", 1).unwrap(), String::from("\'single_quotes\'"));
-    assert_eq!(read_db.lget::<String>("list1", 2).unwrap(), String::from("שָׁלוֹם"));
-    assert_eq!(read_db.lget::<String>("list1", 3).unwrap(), String::from("😻"));
-    assert_eq!(read_db.lget::<String>("list1", 4).unwrap(), String::from("\nescapes\t\r"));
-    assert_eq!(read_db.lget::<String>("list1", 5).unwrap(), String::from("my\\folder"));
+    assert_eq!(
+        read_db.lget::<String>("list1", 0).unwrap(),
+        String::from("\"dobule_quotes\"")
+    );
+    assert_eq!(
+        read_db.lget::<String>("list1", 1).unwrap(),
+        String::from("\'single_quotes\'")
+    );
+    assert_eq!(
+        read_db.lget::<String>("list1", 2).unwrap(),
+        String::from("שָׁלוֹם")
+    );
+    assert_eq!(
+        read_db.lget::<String>("list1", 3).unwrap(),
+        String::from("😻")
+    );
+    assert_eq!(
+        read_db.lget::<String>("list1", 4).unwrap(),
+        String::from("\nescapes\t\r")
+    );
+    assert_eq!(
+        read_db.lget::<String>("list1", 5).unwrap(),
+        String::from("my\\folder")
+    );
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn list_iter_test(ser_method_int: i32) {
     test_setup!("list_iter_test", ser_method_int, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
-    let values = (1, 1.1, String::from("value"), vec![1,2,3], ('a', 'b', 'c'));
+    let values = (
+        1,
+        1.1,
+        String::from("value"),
+        vec![1, 2, 3],
+        ('a', 'b', 'c'),
+    );
 
     // create a list with some values
-    db.lcreate("list1").unwrap()
-      .ladd(&values.0)
-      .ladd(&values.1)
-      .ladd(&values.2)
-      .ladd(&values.3)
-      .ladd(&values.4);
+    db.lcreate("list1")
+        .unwrap()
+        .ladd(&values.0)
+        .ladd(&values.1)
+        .ladd(&values.2)
+        .ladd(&values.3)
+        .ladd(&values.4);
 
     let mut index = 0;
 
@@ -532,7 +610,7 @@ fn list_iter_test(ser_method_int: i32) {
             2 => assert_eq!(item.get_item::<String>().unwrap(), values.2),
             3 => assert_eq!(item.get_item::<Vec<i32>>().unwrap(), values.3),
             4 => assert_eq!(item.get_item::<(char, char, char)>().unwrap(), values.4),
-            _ => assert!(false)
+            _ => assert!(false),
         }
         index += 1;
     }
@@ -542,31 +620,34 @@ fn list_iter_test(ser_method_int: i32) {
 }
 
 #[should_panic]
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn list_doesnt_exist_iter_test(ser_method_int: i32) {
     test_setup!("list_doesnt_exist_iter_test", ser_method_int, db_name);
 
     // create a db with auto_dump == true
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
-    let values = (1, 1.1, String::from("value"), vec![1,2,3], ('a', 'b', 'c'));
+    let values = (
+        1,
+        1.1,
+        String::from("value"),
+        vec![1, 2, 3],
+        ('a', 'b', 'c'),
+    );
 
     // create a list with some values
-    db.lcreate("list1").unwrap()
-      .ladd(&values.0)
-      .ladd(&values.1)
-      .ladd(&values.2)
-      .ladd(&values.3)
-      .ladd(&values.4);
+    db.lcreate("list1")
+        .unwrap()
+        .ladd(&values.0)
+        .ladd(&values.1)
+        .ladd(&values.2)
+        .ladd(&values.3)
+        .ladd(&values.4);
 
     // iterate over a non-existent list - should panic here
-    for _item in db.liter("list2") {
-
-    }
+    for _item in db.liter("list2") {}
 }

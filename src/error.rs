@@ -1,6 +1,6 @@
-use std::result;
-use std::io;
 use std::fmt;
+use std::io;
+use std::result;
 
 /// An enum that represents all types of errors that can occur when using PickleDB
 #[derive(Debug)]
@@ -8,19 +8,18 @@ pub enum ErrorType {
     /// I/O error when reading or writing to file, for example: file not found, etc.
     Io,
     /// An error when trying to serialize or deserialize data
-    Serialization
+    Serialization,
 }
 
 /// A struct that represents all possible errors that can occur when using PickleDB
 pub struct Error {
-    err_code: ErrorCode
+    err_code: ErrorCode,
 }
 
 /// Alias for a `Result` with the error type [Error](struct.Error.html).
 pub type Result<T> = result::Result<T, Error>;
 
 impl Error {
-
     pub(crate) fn new(err_code: ErrorCode) -> Error {
         Error { err_code: err_code }
     }
@@ -29,7 +28,7 @@ impl Error {
     pub fn get_type(&self) -> ErrorType {
         match self.err_code {
             ErrorCode::Io(_) => ErrorType::Io,
-            ErrorCode::Serialization(_) => ErrorType::Serialization
+            ErrorCode::Serialization(_) => ErrorType::Serialization,
         }
     }
 }
@@ -45,10 +44,11 @@ impl fmt::Display for Error {
 
 impl fmt::Debug for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.write_str(&format!("Error {{ msg: {} }}",
+        fmt.write_str(&format!(
+            "Error {{ msg: {} }}",
             match self.err_code {
                 ErrorCode::Io(ref err) => err.to_string(),
-                ErrorCode::Serialization(ref err_str) => err_str.to_string()
+                ErrorCode::Serialization(ref err_str) => err_str.to_string(),
             }
         ))
     }
@@ -56,5 +56,5 @@ impl fmt::Debug for Error {
 
 pub(crate) enum ErrorCode {
     Io(io::Error),
-    Serialization(String)
+    Serialization(String),
 }

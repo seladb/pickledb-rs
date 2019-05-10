@@ -4,19 +4,19 @@
 //! * Creating and removing lists
 //! * Adding and removing items of different type to lists
 //! * Retrieving list items
-//! 
+//!
 #[macro_use]
 extern crate serde_derive;
 
 use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
-use std::fmt::{self, Formatter, Display};
+use std::fmt::{self, Display, Formatter};
 
-/// Define an example struct which represents a rectangle. 
+/// Define an example struct which represents a rectangle.
 /// Next we'll show how to use it in lists.
 #[derive(Serialize, Deserialize)]
 struct Rectangle {
     width: i32,
-    length: i32
+    length: i32,
 }
 
 impl Display for Rectangle {
@@ -27,42 +27,55 @@ impl Display for Rectangle {
 
 /// Create a new DB and add one key-value pair to it
 fn create_db(db_name: &str) {
-    let mut new_db = PickleDb::new(db_name, PickleDbDumpPolicy::AutoDump, SerializationMethod::Bin);
+    let mut new_db = PickleDb::new(
+        db_name,
+        PickleDbDumpPolicy::AutoDump,
+        SerializationMethod::Bin,
+    );
 
     new_db.set("key1", &100).unwrap();
 }
 
 fn main() {
-    
     // create a new DB
     create_db("example.db");
 
     // load the DB
-    let mut db = PickleDb::load("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Bin).unwrap();
+    let mut db = PickleDb::load(
+        "example.db",
+        PickleDbDumpPolicy::AutoDump,
+        SerializationMethod::Bin,
+    )
+    .unwrap();
 
     // print the existing value in key1
     println!("The value of key1 is: {}", db.get::<i32>("key1").unwrap());
 
     // create a new list
-    db.lcreate("list1").unwrap()
-
-    // add an integer item to the list
-      .ladd(&200)
-
-    // add an floating point item to the list
-      .ladd(&2.1)
-
-    // add a string to the list
-      .ladd(&String::from("my list"))
-
-    // add a vector of chars to the list
-      .ladd(&vec!['a', 'b', 'c'])
-
-    // add multiple values to the list: add 3 rectangles 
-      .lextend(&vec![
-        Rectangle { width: 2, length: 4}, 
-        Rectangle { width: 10, length: 22},
-        Rectangle { width: 1, length: 22}, 
+    db.lcreate("list1")
+        .unwrap()
+        // add an integer item to the list
+        .ladd(&200)
+        // add an floating point item to the list
+        .ladd(&2.1)
+        // add a string to the list
+        .ladd(&String::from("my list"))
+        // add a vector of chars to the list
+        .ladd(&vec!['a', 'b', 'c'])
+        // add multiple values to the list: add 3 rectangles
+        .lextend(&vec![
+            Rectangle {
+                width: 2,
+                length: 4,
+            },
+            Rectangle {
+                width: 10,
+                length: 22,
+            },
+            Rectangle {
+                width: 1,
+                length: 22,
+            },
         ]);
 
     // print the list length
@@ -87,12 +100,13 @@ fn main() {
     db.lrem_list("list1").unwrap();
 
     // was list1 removed?
-    println!("list1 was removed. Is it still in the db? {}", db.lexists("list1"));
-
+    println!(
+        "list1 was removed. Is it still in the db? {}",
+        db.lexists("list1")
+    );
 
     // create a new list
-    db.lcreate("list2").unwrap()
-      .lextend(&vec![1,2,3,4]);
+    db.lcreate("list2").unwrap().lextend(&vec![1, 2, 3, 4]);
 
     // iterate over the items in list2
     for item_iter in db.liter("list2") {
