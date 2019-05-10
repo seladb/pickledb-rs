@@ -54,7 +54,7 @@ impl<'a> PickleDbListExtender<'a> {
     ///
     /// # Arguments
     ///
-    /// * `seq` - a vector containing the new items to add to the list
+    /// * `seq` - an iterator containing references to the new items to add to the list
     ///
     /// # Examples
     ///
@@ -71,9 +71,10 @@ impl<'a> PickleDbListExtender<'a> {
     /// // now the list contains 6 items and looks like this: [100, 200, 300, "aa, "bb", "cc"]
     /// ```
     ///
-    pub fn lextend<V>(&mut self, seq: &[V]) -> PickleDbListExtender
+    pub fn lextend<'i, V, I>(&mut self, seq: I) -> PickleDbListExtender
     where
-        V: Serialize,
+        V: 'i + Serialize,
+        I: IntoIterator<Item = &'i V>,
     {
         self.db.lextend(&self.list_name, seq).unwrap()
     }
