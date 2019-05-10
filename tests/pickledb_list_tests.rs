@@ -300,7 +300,7 @@ fn add_to_non_existent_list(ser_method_int: i32) {
     assert!(db.ladd("list1", &num).is_none());
     assert!(db.lextend("list1", &vec_of_nums).is_none());
 
-    // creat a list
+    // create a list
     db.lcreate("list1").unwrap();
 
     // add items to list that doesn't exist
@@ -512,7 +512,7 @@ fn list_with_special_strings(ser_method_int: i32) {
     // create a list and add special strings to it
     db.lcreate("list1")
         .unwrap()
-        .ladd(&String::from("\"dobule_quotes\""))
+        .ladd(&String::from("\"double_quotes\""))
         .ladd(&String::from("\'single_quotes\'"))
         .ladd(&String::from("שָׁלוֹם"))
         .ladd(&String::from("😻"))
@@ -522,7 +522,7 @@ fn list_with_special_strings(ser_method_int: i32) {
     // read special strings
     assert_eq!(
         db.lget::<String>("list1", 0).unwrap(),
-        String::from("\"dobule_quotes\"")
+        String::from("\"double_quotes\"")
     );
     assert_eq!(
         db.lget::<String>("list1", 1).unwrap(),
@@ -545,10 +545,10 @@ fn list_with_special_strings(ser_method_int: i32) {
     // load db from file
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
 
-    // read strgins from list loaded from file
+    // read strings from list loaded from file
     assert_eq!(
         read_db.lget::<String>("list1", 0).unwrap(),
-        String::from("\"dobule_quotes\"")
+        String::from("\"double_quotes\"")
     );
     assert_eq!(
         read_db.lget::<String>("list1", 1).unwrap(),

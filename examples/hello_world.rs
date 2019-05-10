@@ -1,6 +1,6 @@
 //! A simple example of how to use PickleDB. It includes:
 //! * Creating a new DB
-//! * Loading am existing DB from a file
+//! * Loading an existing DB from a file
 //! * Setting and getting key-value pairs of different types
 //!
 #[macro_use]

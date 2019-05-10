@@ -234,7 +234,7 @@ fn set_special_strings(ser_method_int: i32) {
         ser_method!(ser_method_int),
     );
 
-    db.set("string1", &String::from("\"dobule_quotes\""))
+    db.set("string1", &String::from("\"double_quotes\""))
         .unwrap();
     db.set("string2", &String::from("\'single_quotes\'"))
         .unwrap();
@@ -246,7 +246,7 @@ fn set_special_strings(ser_method_int: i32) {
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
     assert_eq!(
         read_db.get::<String>("string1").unwrap(),
-        String::from("\"dobule_quotes\"")
+        String::from("\"double_quotes\"")
     );
     assert_eq!(
         read_db.get::<String>("string2").unwrap(),
