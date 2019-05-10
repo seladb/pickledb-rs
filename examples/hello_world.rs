@@ -2,11 +2,9 @@
 //! * Creating a new DB
 //! * Loading an existing DB from a file
 //! * Setting and getting key-value pairs of different types
-//!
-#[macro_use]
-extern crate serde_derive;
 
 use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
+use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display, Formatter};
 
 /// Define an example struct which represents a rectangle.
