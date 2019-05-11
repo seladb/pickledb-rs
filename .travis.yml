@@ -12,5 +12,9 @@ os:
   - osx
   - windows
 
+before_script:
+  - rustup component add rustfmt
+
 script:
+  - cargo fmt -- --check
   - cargo test

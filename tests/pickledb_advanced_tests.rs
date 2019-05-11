@@ -1,9 +1,9 @@
 use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
-use std::iter;
-use std::collections::HashMap;
-use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use rand::seq::SliceRandom;
+use rand::{thread_rng, Rng};
+use std::collections::HashMap;
+use std::iter;
 
 mod common;
 
@@ -14,41 +14,42 @@ extern crate rstest;
 
 use rstest::rstest_parametrize;
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn lists_and_values(ser_method_int: i32) {
     test_setup!("lists_and_values", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::AutoDump, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
 
     // set a few values
     assert!(db.set("key1", &String::from("val1")).is_ok());
     assert!(db.set("key2", &1).is_ok());
-    assert!(db.set("key3", &vec![1,2,3]).is_ok());
+    assert!(db.set("key3", &vec![1, 2, 3]).is_ok());
 
     // create a few lists and add values to them
-    db.lcreate("list1").unwrap()
-      .lextend(&vec![1,2,3]);
+    db.lcreate("list1").unwrap().lextend(&vec![1, 2, 3]);
 
-    db.lcreate("list2").unwrap()
-      .ladd(&1.1)
-      .ladd(&String::from("some val"));
+    db.lcreate("list2")
+        .unwrap()
+        .ladd(&1.1)
+        .ladd(&String::from("some val"));
 
     // read keys and lists
     {
         let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert_eq!(read_db.get::<String>("key1").unwrap(), String::from("val1"));
         assert_eq!(read_db.get::<i32>("key2").unwrap(), 1);
-        assert_eq!(read_db.get::<Vec<i32>>("key3").unwrap(), vec![1,2,3]);
+        assert_eq!(read_db.get::<Vec<i32>>("key3").unwrap(), vec![1, 2, 3]);
         assert_eq!(read_db.lget::<i32>("list1", 0).unwrap(), 1);
         assert_eq!(read_db.lget::<i32>("list1", 2).unwrap(), 3);
         assert_eq!(read_db.lget::<f64>("list2", 0).unwrap(), 1.1);
-        assert_eq!(read_db.lget::<String>("list2", 1).unwrap(), String::from("some val"));
+        assert_eq!(
+            read_db.lget::<String>("list2", 1).unwrap(),
+            String::from("some val")
+        );
     }
 
     // create key and list with the same name, make sure they override one another
@@ -67,7 +68,6 @@ fn lists_and_values(ser_method_int: i32) {
     assert!(!db.lexists("key_or_list1"));
 }
 
-
 fn gen_random_string<T: Rng>(rng: &mut T, size: usize) -> String {
     iter::repeat(())
         .map(|()| rng.sample(Alphanumeric))
@@ -75,17 +75,15 @@ fn gen_random_string<T: Rng>(rng: &mut T, size: usize) -> String {
         .collect()
 }
 
-#[rstest_parametrize(
-    ser_method_int,
-    case(0),
-    case(1),
-    case(2),
-    case(3)
-)]
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn load_test(ser_method_int: i32) {
     test_setup!("load_test", ser_method_int, db_name);
 
-    let mut db = PickleDb::new(&db_name, PickleDbDumpPolicy::DumpUponRequest, ser_method!(ser_method_int));
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::DumpUponRequest,
+        ser_method!(ser_method_int),
+    );
 
     // number of keys to generate
     let generate_keys = 1000;
@@ -108,24 +106,29 @@ fn load_test(ser_method_int: i32) {
         }
 
         // possible value types: [i32, f32, String, Vec, List]
-        let possible_value_types = [1,2,3,4,5];
+        let possible_value_types = [1, 2, 3, 4, 5];
 
         // randomly choose a type
         match possible_value_types.choose(&mut rng).unwrap() {
-            1 => { // add a i32 value
+            1 => {
+                // add a i32 value
                 db.set(&key, &rng.gen::<i32>()).unwrap();
                 map.insert(String::from(key), "i32");
-            },
-            2 => { // add a f32 value
+            }
+            2 => {
+                // add a f32 value
                 db.set(&key, &rng.gen::<f32>()).unwrap();
                 map.insert(String::from(key), "f32");
-            },
-            3 => { // add a String value
+            }
+            3 => {
+                // add a String value
                 let val_size = rng.gen_range(1, 50);
-                db.set(&key, &gen_random_string(&mut rng, val_size)).unwrap();
+                db.set(&key, &gen_random_string(&mut rng, val_size))
+                    .unwrap();
                 map.insert(String::from(key), "string");
-            },
-            4 => { // add a Vec<i32> value
+            }
+            4 => {
+                // add a Vec<i32> value
                 // randomize vec size 1..10
                 let vec_size = rng.gen_range(1, 10);
                 let mut vec = vec![];
@@ -136,8 +139,9 @@ fn load_test(ser_method_int: i32) {
                 }
                 db.set(&key, &vec).unwrap();
                 map.insert(String::from(key), "vec");
-            },
-            5 => { // add a List value
+            }
+            5 => {
+                // add a List value
 
                 // all list keys get a "list_" prefix
                 let mut list_key = key.clone();
@@ -153,20 +157,25 @@ fn load_test(ser_method_int: i32) {
 
                 // create list elements
                 for _ in 1..list_size {
-
                     // randomly choose an element type: [i32, f32, String, Vec]
                     match possible_value_types[..4].choose(&mut rng).unwrap() {
-                        1 => { // add a i32 element to the list
+                        1 => {
+                            // add a i32 element to the list
                             assert!(db.ladd(&list_key, &rng.gen::<i32>()).is_some());
-                        },
-                        2 => { // add a f32 element to the list
+                        }
+                        2 => {
+                            // add a f32 element to the list
                             assert!(db.ladd(&list_key, &rng.gen::<f32>()).is_some());
-                        }, 
-                        3 => { // add a String element to the list
+                        }
+                        3 => {
+                            // add a String element to the list
                             let val_size = rng.gen_range(1, 50);
-                            assert!(db.ladd(&list_key, &gen_random_string(&mut rng, val_size)).is_some());
-                        },
-                        4 => { // add a Vec<i32> element to the list
+                            assert!(db
+                                .ladd(&list_key, &gen_random_string(&mut rng, val_size))
+                                .is_some());
+                        }
+                        4 => {
+                            // add a Vec<i32> element to the list
                             // randomize vec size 1..10
                             let vec_size = rng.gen_range(1, 10);
                             let mut vec = vec![];
@@ -178,11 +187,11 @@ fn load_test(ser_method_int: i32) {
 
                             // add vec as an element to the list
                             assert!(db.ladd(&list_key, &vec).is_some());
-                        },
+                        }
                         _ => panic!("Cannot add list inside a list!"),
                     }
                 }
-            },
+            }
             _ => panic!("Chosen wrong type to generate!"),
         }
     }
@@ -192,15 +201,17 @@ fn load_test(ser_method_int: i32) {
 
     // dump DB to file
     assert!(db.dump().is_ok());
-    
+
     // read again from file
     let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
 
     // iterate every key/value_type in map saved before
     for (key, val_type) in map.iter() {
-        
         // verify key exists in db
-        assert!(read_db.exists(&key), format!("Key {} of type {} isn't found", key, val_type));
+        assert!(
+            read_db.exists(&key),
+            format!("Key {} of type {} isn't found", key, val_type)
+        );
 
         // get the value according to the value_type saved
         match val_type {

@@ -1,13 +1,13 @@
+use serde::de::DeserializeOwned;
 use std::collections::hash_map;
 use std::slice;
-use serde::{de::DeserializeOwned};
 
 use crate::serialization::Serializer;
 
 /// Iterator object for iterating over keys and values in PickleDB. Returned in [PickleDb::iter()](struct.PickleDb.html#method.iter)
 pub struct PickleDbIterator<'a> {
     pub(crate) map_iter: hash_map::Iter<'a, String, Vec<u8>>,
-    pub(crate) serializer: &'a Serializer
+    pub(crate) serializer: &'a Serializer,
 }
 
 impl<'a> Iterator for PickleDbIterator<'a> {
@@ -15,8 +15,12 @@ impl<'a> Iterator for PickleDbIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.map_iter.next() {
-            Some((key, value)) => Some(PickleDbIteratorItem { key: key, value: value, serializer: self.serializer }),
-            None => None
+            Some((key, value)) => Some(PickleDbIteratorItem {
+                key: key,
+                value: value,
+                serializer: self.serializer,
+            }),
+            None => None,
         }
     }
 }
@@ -25,18 +29,17 @@ impl<'a> Iterator for PickleDbIterator<'a> {
 pub struct PickleDbIteratorItem<'a> {
     key: &'a str,
     value: &'a Vec<u8>,
-    serializer: &'a Serializer
+    serializer: &'a Serializer,
 }
 
 impl<'a> PickleDbIteratorItem<'a> {
-
     /// Get the key
     pub fn get_key(&self) -> &str {
         self.key
     }
 
     /// Get the value of the key.
-    /// 
+    ///
     /// The key is always a string but the value can be of any type. It's the user's
     /// responsibility to know the value type and give it while calling this method.
     /// If the key doesn't exist or if the type is wrong, `None` will be returned.
@@ -44,8 +47,11 @@ impl<'a> PickleDbIteratorItem<'a> {
     /// Since the values are stored in a serialized way the returned object is
     /// not a reference to the value stored in a DB but actually a new instance of it.
     /// The method returns `Some(V)` if deserialization succeeds or `None` otherwise.
-    /// 
-    pub fn get_value<V>(&self) -> Option<V> where V: DeserializeOwned {
+    ///
+    pub fn get_value<V>(&self) -> Option<V>
+    where
+        V: DeserializeOwned,
+    {
         self.serializer.deserialize_data::<V>(self.value)
     }
 }
@@ -53,7 +59,7 @@ impl<'a> PickleDbIteratorItem<'a> {
 /// Iterator object for iterating over items in a PickleDB list. Returned in [PickleDb::liter()](struct.PickleDb.html#method.liter)
 pub struct PickleDbListIterator<'a> {
     pub(crate) list_iter: slice::Iter<'a, Vec<u8>>,
-    pub(crate) serializer: &'a Serializer
+    pub(crate) serializer: &'a Serializer,
 }
 
 impl<'a> Iterator for PickleDbListIterator<'a> {
@@ -61,8 +67,11 @@ impl<'a> Iterator for PickleDbListIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.list_iter.next() {
-            Some(value) => Some(PickleDbListIteratorItem { value: value, serializer: self.serializer }),
-            None => None
+            Some(value) => Some(PickleDbListIteratorItem {
+                value: value,
+                serializer: self.serializer,
+            }),
+            None => None,
         }
     }
 }
@@ -70,20 +79,22 @@ impl<'a> Iterator for PickleDbListIterator<'a> {
 /// The object returned in each iteration when iterating over a PickleDB list
 pub struct PickleDbListIteratorItem<'a> {
     value: &'a Vec<u8>,
-    serializer: &'a Serializer
+    serializer: &'a Serializer,
 }
 
 impl<'a> PickleDbListIteratorItem<'a> {
-
     /// Get the item in the current position.
-    /// 
-    /// This method retrieves the item in the current position. It's the user's responsibility 
+    ///
+    /// This method retrieves the item in the current position. It's the user's responsibility
     /// to know what is the correct type of the item and give it while calling this method.
-    /// Since the item in the lists are stored in a serialized way the returned object 
+    /// Since the item in the lists are stored in a serialized way the returned object
     /// is not a reference to the item stored in a DB but actually a new instance of it.
     /// The method returns `Some(V)` if deserialization succeeds or `None` otherwise.
-    /// 
-    pub fn get_item<V>(&self) -> Option<V> where V: DeserializeOwned {
+    ///
+    pub fn get_item<V>(&self) -> Option<V>
+    where
+        V: DeserializeOwned,
+    {
         self.serializer.deserialize_data(self.value)
     }
 }
