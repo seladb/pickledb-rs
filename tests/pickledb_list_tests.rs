@@ -1,3 +1,5 @@
+#![allow(clippy::float_cmp)]
+
 use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 
 mod common;
@@ -10,6 +12,7 @@ extern crate rstest;
 
 use rstest::rstest_parametrize;
 
+#[allow(clippy::cyclomatic_complexity)]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn basic_lists(ser_method_int: i32) {
     test_setup!("basic_lists", ser_method_int, db_name);
@@ -137,7 +140,7 @@ fn add_and_extend_lists(ser_method_int: i32) {
     db.lcreate("list3").unwrap();
 
     // list1 - add 6 elements using lextend
-    assert!(db.lextend("list1", &vec![1, 2, 3, 4, 5, 6]).is_some());
+    assert!(db.lextend("list1", &[1, 2, 3, 4, 5, 6]).is_some());
 
     // list1 - add 6 elements using ladd
     db.ladd("list2", &1)
@@ -151,9 +154,9 @@ fn add_and_extend_lists(ser_method_int: i32) {
     // list3 - add 6 elements using lextend and ladd
     db.ladd("list3", &1)
         .unwrap()
-        .lextend(&vec![2, 3])
+        .lextend(&[2, 3])
         .ladd(&4)
-        .lextend(&vec![5, 6]);
+        .lextend(&[5, 6]);
 
     // verify lists length
     assert_eq!(db.llen("list1"), 6);
@@ -194,9 +197,7 @@ fn override_lists(ser_method_int: i32) {
     );
 
     // create a list and add some values to it
-    db.lcreate("list1")
-        .unwrap()
-        .lextend(&vec!["aa", "bb", "cc"]);
+    db.lcreate("list1").unwrap().lextend(&["aa", "bb", "cc"]);
 
     // verify list len is 3
     assert_eq!(db.llen("list1"), 3);
@@ -221,7 +222,7 @@ fn override_lists(ser_method_int: i32) {
     }
 
     // add items to the override list
-    assert!(db.lextend("list1", &vec![1, 2, 3, 4]).is_some());
+    assert!(db.lextend("list1", &[1, 2, 3, 4]).is_some());
 
     // verify list contains the new data
     assert!(db.lexists("list1"));
@@ -253,7 +254,7 @@ fn lget_corner_cases(ser_method_int: i32) {
     // create a list and add some values
     db.lcreate("list1")
         .unwrap()
-        .lextend(&vec!["hello", "world", "good", "morning"])
+        .lextend(&["hello", "world", "good", "morning"])
         .ladd(&100);
 
     // lget values that exist
@@ -331,19 +332,19 @@ fn remove_list(ser_method_int: i32) {
     // create some lists add add values to them
     db.lcreate("list1")
         .unwrap()
-        .lextend(&vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        .lextend(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
     db.lcreate("list2")
         .unwrap()
-        .lextend(&vec!['a', 'b', 'c', 'd', 'e']);
+        .lextend(&['a', 'b', 'c', 'd', 'e']);
 
     db.lcreate("list3")
         .unwrap()
-        .lextend(&vec![1.2, 1.3, 2.1, 3.1, 3.3, 7.889]);
+        .lextend(&[1.2, 1.3, 2.1, 3.1, 3.3, 7.889]);
 
     db.lcreate("list4")
         .unwrap()
-        .lextend(&vec!["aaa", "bbb", "ccc", "ddd", "eee"]);
+        .lextend(&["aaa", "bbb", "ccc", "ddd", "eee"]);
 
     // verify number of lists in file
     {
@@ -410,10 +411,10 @@ fn remove_values_from_list(ser_method_int: i32) {
     // create a list and add some values
     db.lcreate("list1")
         .unwrap()
-        .lextend(&vec![1, 2, 3])
+        .lextend(&[1, 2, 3])
         .ladd(&String::from("hello"))
         .ladd(&1.234)
-        .lextend(&vec![MySquare { x: 4 }, MySquare { x: 10 }]);
+        .lextend(&[MySquare { x: 4 }, MySquare { x: 10 }]);
 
     // list now looks like this:
     // Indices: [0, 1, 2, 3,       4,     5,           6           ]
@@ -610,7 +611,7 @@ fn list_iter_test(ser_method_int: i32) {
             2 => assert_eq!(item.get_item::<String>().unwrap(), values.2),
             3 => assert_eq!(item.get_item::<Vec<i32>>().unwrap(), values.3),
             4 => assert_eq!(item.get_item::<(char, char, char)>().unwrap(), values.4),
-            _ => assert!(false),
+            _ => panic!(),
         }
         index += 1;
     }
@@ -619,6 +620,7 @@ fn list_iter_test(ser_method_int: i32) {
     assert_eq!(index, 5);
 }
 
+#[allow(unused_attributes)]
 #[should_panic]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn list_doesnt_exist_iter_test(ser_method_int: i32) {

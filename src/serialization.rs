@@ -6,6 +6,9 @@ use serde_yaml;
 use std::collections::HashMap;
 use std::fmt;
 
+type DbMap = HashMap<String, Vec<u8>>;
+type DbListMap = HashMap<String, Vec<Vec<u8>>>;
+
 /// An enum for specifying the serialization method to use when creating a new PickleDB database
 /// or loading one from a file
 #[derive(Debug)]
@@ -68,11 +71,7 @@ impl JsonSerializer {
         }
     }
 
-    fn serialize_db(
-        &self,
-        map: &HashMap<String, Vec<u8>>,
-        list_map: &HashMap<String, Vec<Vec<u8>>>,
-    ) -> Result<Vec<u8>, String> {
+    fn serialize_db(&self, map: &DbMap, list_map: &DbListMap) -> Result<Vec<u8>, String> {
         let mut json_map: HashMap<&str, &str> = HashMap::new();
         for (key, value) in map.iter() {
             json_map.insert(key, std::str::from_utf8(value).unwrap());
@@ -93,20 +92,17 @@ impl JsonSerializer {
         }
     }
 
-    fn deserialize_db(
-        &self,
-        ser_db: &[u8],
-    ) -> Result<(HashMap<String, Vec<u8>>, HashMap<String, Vec<Vec<u8>>>), String> {
+    fn deserialize_db(&self, ser_db: &[u8]) -> Result<(DbMap, DbListMap), String> {
         match serde_json::from_str::<(HashMap<String, String>, HashMap<String, Vec<String>>)>(
             std::str::from_utf8(ser_db).unwrap(),
         ) {
             Ok((json_map, json_list_map)) => {
-                let mut byte_map: HashMap<String, Vec<u8>> = HashMap::new();
+                let mut byte_map: DbMap = HashMap::new();
                 for (key, value) in json_map.iter() {
                     byte_map.insert(key.to_string(), value.as_bytes().to_vec());
                 }
 
-                let mut byte_list_map: HashMap<String, Vec<Vec<u8>>> = HashMap::new();
+                let mut byte_list_map: DbListMap = HashMap::new();
                 for (key, list) in json_list_map.iter() {
                     let byte_list: Vec<Vec<u8>> =
                         list.iter().map(|item| item.as_bytes().to_vec()).collect();
@@ -148,11 +144,7 @@ impl YamlSerializer {
         }
     }
 
-    fn serialize_db(
-        &self,
-        map: &HashMap<String, Vec<u8>>,
-        list_map: &HashMap<String, Vec<Vec<u8>>>,
-    ) -> Result<Vec<u8>, String> {
+    fn serialize_db(&self, map: &DbMap, list_map: &DbListMap) -> Result<Vec<u8>, String> {
         let mut yaml_map: HashMap<&str, &str> = HashMap::new();
         for (key, value) in map.iter() {
             yaml_map.insert(key, std::str::from_utf8(value).unwrap());
@@ -173,20 +165,17 @@ impl YamlSerializer {
         }
     }
 
-    fn deserialize_db(
-        &self,
-        ser_db: &[u8],
-    ) -> Result<(HashMap<String, Vec<u8>>, HashMap<String, Vec<Vec<u8>>>), String> {
+    fn deserialize_db(&self, ser_db: &[u8]) -> Result<(DbMap, DbListMap), String> {
         match serde_yaml::from_str::<(HashMap<String, String>, HashMap<String, Vec<String>>)>(
             std::str::from_utf8(ser_db).unwrap(),
         ) {
             Ok((yaml_map, yaml_list_map)) => {
-                let mut byte_map: HashMap<String, Vec<u8>> = HashMap::new();
+                let mut byte_map: DbMap = HashMap::new();
                 for (key, value) in yaml_map.iter() {
                     byte_map.insert(key.to_string(), value.as_bytes().to_vec());
                 }
 
-                let mut byte_list_map: HashMap<String, Vec<Vec<u8>>> = HashMap::new();
+                let mut byte_list_map: DbListMap = HashMap::new();
                 for (key, list) in yaml_list_map.iter() {
                     let byte_list: Vec<Vec<u8>> =
                         list.iter().map(|item| item.as_bytes().to_vec()).collect();
@@ -228,18 +217,11 @@ impl BincodeSerializer {
         }
     }
 
-    fn serialize_db(
-        &self,
-        map: &HashMap<String, Vec<u8>>,
-        list_map: &HashMap<String, Vec<Vec<u8>>>,
-    ) -> Result<Vec<u8>, String> {
+    fn serialize_db(&self, map: &DbMap, list_map: &DbListMap) -> Result<Vec<u8>, String> {
         self.serialize_data(&(map, list_map))
     }
 
-    fn deserialize_db(
-        &self,
-        ser_db: &[u8],
-    ) -> Result<(HashMap<String, Vec<u8>>, HashMap<String, Vec<Vec<u8>>>), String> {
+    fn deserialize_db(&self, ser_db: &[u8]) -> Result<(DbMap, DbListMap), String> {
         match self.deserialize_data(ser_db) {
             Some((map, list_map)) => Ok((map, list_map)),
             None => Err(String::from("Cannot deserialize DB")),
@@ -274,18 +256,11 @@ impl CborSerializer {
         }
     }
 
-    fn serialize_db(
-        &self,
-        map: &HashMap<String, Vec<u8>>,
-        list_map: &HashMap<String, Vec<Vec<u8>>>,
-    ) -> Result<Vec<u8>, String> {
+    fn serialize_db(&self, map: &DbMap, list_map: &DbListMap) -> Result<Vec<u8>, String> {
         self.serialize_data(&(map, list_map))
     }
 
-    fn deserialize_db(
-        &self,
-        ser_db: &[u8],
-    ) -> Result<(HashMap<String, Vec<u8>>, HashMap<String, Vec<Vec<u8>>>), String> {
+    fn deserialize_db(&self, ser_db: &[u8]) -> Result<(DbMap, DbListMap), String> {
         match self.deserialize_data(ser_db) {
             Some((map, list_map)) => Ok((map, list_map)),
             None => Err(String::from("Cannot deserialize DB")),
@@ -304,7 +279,7 @@ pub(crate) struct Serializer {
 impl Serializer {
     pub(crate) fn new(ser_method: SerializationMethod) -> Serializer {
         Serializer {
-            ser_method: ser_method,
+            ser_method,
             json_serializer: JsonSerializer::new(),
             bincode_serializer: BincodeSerializer::new(),
             yaml_serializer: YamlSerializer::new(),
@@ -338,8 +313,8 @@ impl Serializer {
 
     pub(crate) fn serialize_db(
         &self,
-        map: &HashMap<String, Vec<u8>>,
-        list_map: &HashMap<String, Vec<Vec<u8>>>,
+        map: &DbMap,
+        list_map: &DbListMap,
     ) -> Result<Vec<u8>, String> {
         match self.ser_method {
             SerializationMethod::Json => self.json_serializer.serialize_db(map, list_map),
@@ -349,10 +324,7 @@ impl Serializer {
         }
     }
 
-    pub(crate) fn deserialize_db(
-        &self,
-        ser_db: &[u8],
-    ) -> Result<(HashMap<String, Vec<u8>>, HashMap<String, Vec<Vec<u8>>>), String> {
+    pub(crate) fn deserialize_db(&self, ser_db: &[u8]) -> Result<(DbMap, DbListMap), String> {
         match self.ser_method {
             SerializationMethod::Json => self.json_serializer.deserialize_db(ser_db),
             SerializationMethod::Bin => self.bincode_serializer.deserialize_db(ser_db),

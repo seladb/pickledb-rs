@@ -16,8 +16,8 @@ impl<'a> Iterator for PickleDbIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.map_iter.next() {
             Some((key, value)) => Some(PickleDbIteratorItem {
-                key: key,
-                value: value,
+                key,
+                value,
                 serializer: self.serializer,
             }),
             None => None,
@@ -68,7 +68,7 @@ impl<'a> Iterator for PickleDbListIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.list_iter.next() {
             Some(value) => Some(PickleDbListIteratorItem {
-                value: value,
+                value,
                 serializer: self.serializer,
             }),
             None => None,

@@ -1,3 +1,5 @@
+#![allow(clippy::float_cmp)]
+
 use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 
 mod common;
@@ -407,10 +409,10 @@ fn iter_test(ser_method_int: i32) {
                 key_value.get_value::<(char, char, char)>().unwrap(),
                 ('a', 'b', 'c')
             ),
-            _ => assert!(false),
+            _ => panic!(),
         }
     }
 
     // verify all 5 keys were seen
-    assert_eq!(keys_seen.iter().filter(|&t| *t == true).count(), 5);
+    assert_eq!(keys_seen.iter().filter(|&t| *t).count(), 5);
 }

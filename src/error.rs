@@ -21,7 +21,7 @@ pub type Result<T> = result::Result<T, Error>;
 
 impl Error {
     pub(crate) fn new(err_code: ErrorCode) -> Error {
-        Error { err_code: err_code }
+        Error { err_code }
     }
 
     /// Get the error type
