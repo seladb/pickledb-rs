@@ -76,6 +76,7 @@ fn gen_random_string<T: Rng>(rng: &mut T, size: usize) -> String {
         .collect()
 }
 
+#[allow(clippy::cyclomatic_complexity)]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn load_test(ser_method_int: i32) {
     test_setup!("load_test", ser_method_int, db_name);
@@ -92,6 +93,9 @@ fn load_test(ser_method_int: i32) {
     // a map that will store all generated keys and the value type
     let mut map: HashMap<String, &str> = HashMap::new();
 
+    // all list keys get a "list_" prefix
+    let make_list_key = |key: &str| format!("list_{}", key);
+
     // generate keys and values
     for _ in 0..generate_keys {
         let mut rng = thread_rng();
@@ -101,7 +105,7 @@ fn load_test(ser_method_int: i32) {
         let mut key: String = gen_random_string(&mut rng, key_len as usize);
 
         // if key already exists, generate another one
-        while map.get(&key).is_some() {
+        while map.contains_key(&key) || map.contains_key(&make_list_key(&key)) {
             key_len = rng.gen_range(3, 15);
             key = gen_random_string(&mut rng, key_len as usize);
         }
@@ -114,19 +118,19 @@ fn load_test(ser_method_int: i32) {
             1 => {
                 // add a i32 value
                 db.set(&key, &rng.gen::<i32>()).unwrap();
-                map.insert(key, "i32");
+                assert!(map.insert(key, "i32").is_none());
             }
             2 => {
                 // add a f32 value
                 db.set(&key, &rng.gen::<f32>()).unwrap();
-                map.insert(key, "f32");
+                assert!(map.insert(key, "f32").is_none());
             }
             3 => {
                 // add a String value
                 let val_size = rng.gen_range(1, 50);
                 db.set(&key, &gen_random_string(&mut rng, val_size))
                     .unwrap();
-                map.insert(key, "string");
+                assert!(map.insert(key, "string").is_none());
             }
             4 => {
                 // add a Vec<i32> value
@@ -139,19 +143,17 @@ fn load_test(ser_method_int: i32) {
                     vec.push(rng.gen::<i32>());
                 }
                 db.set(&key, &vec).unwrap();
-                map.insert(key, "vec");
+                assert!(map.insert(key, "vec").is_none());
             }
             5 => {
                 // add a List value
 
-                // all list keys get a "list_" prefix
-                let mut list_key = key.clone();
-                list_key.insert_str(0, "list_");
+                let list_key = make_list_key(&key);
 
                 // create the list
                 db.lcreate(&list_key).unwrap();
 
-                map.insert(list_key.clone(), "list");
+                assert!(map.insert(list_key.clone(), "list").is_none());
 
                 // randomize list size 1..50
                 let list_size: u32 = rng.gen_range(1, 50);
