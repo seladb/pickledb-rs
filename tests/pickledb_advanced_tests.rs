@@ -7,8 +7,6 @@ use std::iter;
 
 mod common;
 
-extern crate serde_derive;
-
 #[cfg(test)]
 extern crate rstest;
 

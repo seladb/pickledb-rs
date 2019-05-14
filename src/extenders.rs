@@ -23,9 +23,10 @@ impl<'a> PickleDbListExtender<'a> {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
+    /// ```no_run
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
-    /// db.lcreate("list1")
+    /// db.lcreate("list1").unwrap()
     ///
     /// // add items of different types to the list
     ///   .ladd(&100)
@@ -58,15 +59,16 @@ impl<'a> PickleDbListExtender<'a> {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
+    /// ```no_run
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
     /// db.lcreate("list1");
     ///
     /// // add a bunch of numbers to the list
-    /// db.lextends("list1", &vec![100, 200, 300])
+    /// db.lextend("list1", &vec![100, 200, 300]).unwrap()
     ///
     /// // add a bunch of strings to the list
-    ///   .lextends(&vec!["aa", "bb", "cc"]);
+    ///   .lextend(&vec!["aa", "bb", "cc"]);
     ///
     /// // now the list contains 6 items and looks like this: [100, 200, 300, "aa, "bb", "cc"]
     /// ```

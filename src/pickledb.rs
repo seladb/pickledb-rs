@@ -10,13 +10,13 @@ use crate::iterators::{PickleDbIterator, PickleDbListIterator};
 use crate::serialization::SerializationMethod;
 use crate::serialization::Serializer;
 
-/// An enum that determines the policy of dumping PickleDB changes into the file
+/// An enum that determines the policy of dumping PickleDb changes into the file
 pub enum PickleDbDumpPolicy {
     /// Never dump any change, file will always remain read-only
     NeverDump,
     /// Every change will be dumped immediately and automatically to the file
     AutoDump,
-    /// Data won't be dumped unless the user calls [PickleDB::dump()](struct.PickleDb.html#method.dump) proactively to dump the data
+    /// Data won't be dumped unless the user calls [PickleDb::dump()](struct.PickleDb.html#method.dump) proactively to dump the data
     DumpUponRequest,
     /// Changes will be dumped to the file periodically, no sooner than the Duration provided by the user.
     /// The way this mechanism works is as follows: each time there is a DB change the last DB dump time is checked.
@@ -25,7 +25,7 @@ pub enum PickleDbDumpPolicy {
     PeriodicDump(Duration),
 }
 
-/// A struct that represents a PickleDB object
+/// A struct that represents a PickleDb object
 pub struct PickleDb {
     map: HashMap<String, Vec<u8>>,
     list_map: HashMap<String, Vec<Vec<u8>>>,
@@ -36,21 +36,21 @@ pub struct PickleDb {
 }
 
 impl PickleDb {
-    /// Constructs a new `PickleDB` instance.
+    /// Constructs a new `PickleDb` instance.
     ///
     /// # Arguments
     ///
     /// * `db_path` - a path where the DB will be stored
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
-    ///    [PickleDB::load()](#method.load) to understand the different policy options
+    ///    [PickleDb::load()](#method.load) to understand the different policy options
     /// * `serialization_method` - the serialization method to use for storing the data to memory and file
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
     ///
-    /// let mut db = PickleDB::new("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Json);
+    /// let mut db = PickleDb::new("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Json);
     /// ```
     ///
     pub fn new<P: AsRef<Path>>(
@@ -71,80 +71,80 @@ impl PickleDb {
         }
     }
 
-    /// Constructs a new `PickleDB` instance that uses [JSON serialization](https://crates.io/crates/serde_json) for storing the data.
+    /// Constructs a new `PickleDb` instance that uses [JSON serialization](https://crates.io/crates/serde_json) for storing the data.
     ///
     /// # Arguments
     ///
     /// * `db_path` - a path where the DB will be stored
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
-    ///    [PickleDB::load()](#method.load) to understand the different policy options
+    ///    [PickleDb::load()](#method.load) to understand the different policy options
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
-    /// let mut db = PickleDB::new_json("example.db", PickleDbDumpPolicy::AutoDump);
+    /// let mut db = PickleDb::new_json("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
     pub fn new_json<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb::new(db_path, dump_policy, SerializationMethod::Json)
     }
 
-    /// Constructs a new `PickleDB` instance that uses [Bincode serialization](https://crates.io/crates/bincode) for storing the data.
+    /// Constructs a new `PickleDb` instance that uses [Bincode serialization](https://crates.io/crates/bincode) for storing the data.
     ///
     /// # Arguments
     ///
     /// * `db_path` - a path where the DB will be stored
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
-    ///    [PickleDB::load()](#method.load) to understand the different policy options
+    ///    [PickleDb::load()](#method.load) to understand the different policy options
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
-    /// let mut db = PickleDB::new_bin("example.db", PickleDbDumpPolicy::AutoDump);
+    /// let mut db = PickleDb::new_bin("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
     pub fn new_bin<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb::new(db_path, dump_policy, SerializationMethod::Bin)
     }
 
-    /// Constructs a new `PickleDB` instance that uses [YAML serialization](https://crates.io/crates/serde_yaml) for storing the data.
+    /// Constructs a new `PickleDb` instance that uses [YAML serialization](https://crates.io/crates/serde_yaml) for storing the data.
     ///
     /// # Arguments
     ///
     /// * `db_path` - a path where the DB will be stored
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
-    ///    [PickleDB::load()](#method.load) to understand the different policy options
+    ///    [PickleDb::load()](#method.load) to understand the different policy options
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
-    /// let mut db = PickleDB::new_yaml("example.db", PickleDbDumpPolicy::AutoDump);
+    /// let mut db = PickleDb::new_yaml("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
     pub fn new_yaml<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb::new(db_path, dump_policy, SerializationMethod::Yaml)
     }
 
-    /// Constructs a new `PickleDB` instance that uses [CBOR serialization](https://crates.io/crates/serde_cbor) for storing the data.
+    /// Constructs a new `PickleDb` instance that uses [CBOR serialization](https://crates.io/crates/serde_cbor) for storing the data.
     ///
     /// # Arguments
     ///
     /// * `db_path` - a path where the DB will be stored
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file. Please see
-    ///    [PickleDB::load()](#method.load) to understand the different policy options
+    ///    [PickleDb::load()](#method.load) to understand the different policy options
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
-    /// let mut db = PickleDB::new_cbor("example.db", PickleDbDumpPolicy::AutoDump);
+    /// let mut db = PickleDb::new_cbor("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
     pub fn new_cbor<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
@@ -153,7 +153,7 @@ impl PickleDb {
 
     /// Load a DB from a file.
     ///
-    /// This method tries to load a DB from a file. Upon success an instance of `PickleDB` is returned,
+    /// This method tries to load a DB from a file. Upon success an instance of `PickleDb` is returned,
     /// otherwise an [Error](error/struct.Error.html) object is returned.
     ///
     /// # Arguments
@@ -163,7 +163,7 @@ impl PickleDb {
     ///   The user can choose between the following options:
     ///   * [PickleDbDumpPolicy::NeverDump](enum.PickleDbDumpPolicy.html#variant.NeverDump) - never dump any change,
     ///     file will always remain read-only. When choosing this policy even calling to [dump()](#method.dump) won't dump the data.
-    ///     Choosing this option is the same like calling [PickleDB::load_read_only()](#method.load_read_only)
+    ///     Choosing this option is the same like calling [PickleDb::load_read_only()](#method.load_read_only)
     ///   * [PickleDbDumpPolicy::AutoDump](enum.PickleDbDumpPolicy.html#variant.AutoDump) - every change will be dumped
     ///     immediately and automatically to the file
     ///   * [PickleDbDumpPolicy::DumpUponRequest](enum.PickleDbDumpPolicy.html#variant.DumpUponRequest) - data won't be dumped
@@ -176,10 +176,10 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
     ///
-    /// let db = PickleDB::load("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Yaml);
+    /// let db = PickleDb::load("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Yaml);
     /// ```
     ///
     pub fn load<P: AsRef<Path>>(
@@ -214,21 +214,21 @@ impl PickleDb {
 
     /// Load a DB from a file stored in a Json format
     ///
-    /// This method tries to load a DB from a file serialized in Json format. Upon success an instance of `PickleDB` is returned,
+    /// This method tries to load a DB from a file serialized in Json format. Upon success an instance of `PickleDb` is returned,
     /// otherwise an [Error](error/struct.Error.html) object is returned.
     ///
     /// # Arguments
     ///
     /// * `db_path` - a path where the DB is loaded from
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file.
-    ///   See [PickleDB::load()](#method.load) for more information
+    ///   See [PickleDb::load()](#method.load) for more information
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
-    /// let db = PickleDB::load_json("example.db", PickleDbDumpPolicy::AutoDump);
+    /// let db = PickleDb::load_json("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
     pub fn load_json<P: AsRef<Path>>(
@@ -240,21 +240,21 @@ impl PickleDb {
 
     /// Load a DB from a file stored in Bincode format
     ///
-    /// This method tries to load a DB from a file serialized in Bincode format. Upon success an instance of `PickleDB` is returned,
+    /// This method tries to load a DB from a file serialized in Bincode format. Upon success an instance of `PickleDb` is returned,
     /// otherwise an [Error](error/struct.Error.html) object is returned.
     ///
     /// # Arguments
     ///
     /// * `db_path` - a path where the DB is loaded from
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file.
-    ///   See [PickleDB::load()](#method.load) for more information
+    ///   See [PickleDb::load()](#method.load) for more information
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
-    /// let db = PickleDB::load_bin("example.db", PickleDbDumpPolicy::AutoDump);
+    /// let db = PickleDb::load_bin("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
     pub fn load_bin<P: AsRef<Path>>(
@@ -266,21 +266,21 @@ impl PickleDb {
 
     /// Load a DB from a file stored in Yaml format
     ///
-    /// This method tries to load a DB from a file serialized in Yaml format. Upon success an instance of `PickleDB` is returned,
+    /// This method tries to load a DB from a file serialized in Yaml format. Upon success an instance of `PickleDb` is returned,
     /// otherwise an [Error](error/struct.Error.html) object is returned.
     ///
     /// # Arguments
     ///
     /// * `db_path` - a path where the DB is loaded from
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file.
-    ///   See [PickleDB::load()](#method.load) for more information
+    ///   See [PickleDb::load()](#method.load) for more information
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
-    /// let db = PickleDB::load_yaml("example.db", PickleDbDumpPolicy::AutoDump);
+    /// let db = PickleDb::load_yaml("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
     pub fn load_yaml<P: AsRef<Path>>(
@@ -292,21 +292,21 @@ impl PickleDb {
 
     /// Load a DB from a file stored in Cbor format
     ///
-    /// This method tries to load a DB from a file serialized in Cbor format. Upon success an instance of `PickleDB` is returned,
+    /// This method tries to load a DB from a file serialized in Cbor format. Upon success an instance of `PickleDb` is returned,
     /// otherwise an [Error](error/struct.Error.html) object is returned.
     ///
     /// # Arguments
     ///
     /// * `db_path` - a path where the DB is loaded from
     /// * `dump_policy` - an enum value that determines the policy of dumping DB changes into the file.
-    ///   See [PickleDB::load()](#method.load) for more information
+    ///   See [PickleDb::load()](#method.load) for more information
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
-    /// let db = PickleDB::load_cbor("example.db", PickleDbDumpPolicy::AutoDump);
+    /// let db = PickleDb::load_cbor("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
     pub fn load_cbor<P: AsRef<Path>>(
@@ -318,11 +318,11 @@ impl PickleDb {
 
     /// Load a DB from a file in read-only mode.
     ///
-    /// This method is similar to the [PickleDB::load()](#method.load) method with the only difference
+    /// This method is similar to the [PickleDb::load()](#method.load) method with the only difference
     /// that the file is loaded from DB with a dump policy of
     /// [PickleDbDumpPolicy::NeverDump](enum.PickleDbDumpPolicy.html#variant.NeverDump), meaning
     /// changes will not be saved to the file, even when calling [dump()](#method.dump).
-    /// Upon success an instance of `PickleDB` is returned, otherwise an [Error](error/struct.Error.html)
+    /// Upon success an instance of `PickleDb` is returned, otherwise an [Error](error/struct.Error.html)
     /// object is returned.
     ///
     /// # Arguments
@@ -332,10 +332,10 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
-    /// use pickledb::PickleDb;
+    /// ```no_run
+    /// use pickledb::{PickleDb, SerializationMethod};
     ///
-    /// let readonly_db = PickleDB::load_read_only("example.db", SerializationMethod::Cbor);
+    /// let mut readonly_db = PickleDb::load_read_only("example.db", SerializationMethod::Cbor).unwrap();
     ///
     /// // nothing happens by calling this method
     /// readonly_db.dump();
@@ -423,7 +423,9 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
+    /// ```no_run
+    /// # use serde::{Serialize, Deserialize};
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // set a number
     /// db.set("key1", &100).unwrap();
     ///
@@ -491,7 +493,10 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
+    /// ```no_run
+    /// # use serde::{Serialize, Deserialize};
+    /// # #[derive(Serialize, Deserialize)] struct Coor { x: i32, y: i32, }
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // read a num
     /// let num = db.get::<i32>("key1").unwrap();
     ///
@@ -502,7 +507,7 @@ impl PickleDb {
     /// let my_str = db.get::<String>("key3").unwrap();
     ///
     /// // read a Vec
-    /// ley vec = db.get::<Vec<i32>>("key4").unwrap();
+    /// let vec = db.get::<Vec<i32>>("key4").unwrap();
     ///
     /// // read a struct
     /// let coor = db.get::<Coor>("key5").unwrap();
@@ -659,7 +664,8 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
+    /// ```no_run
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
     /// db.lcreate("list1");
     ///
@@ -699,12 +705,13 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
+    /// ```no_run
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
     /// db.lcreate("list1");
     ///
     /// // add a bunch of numbers to the list
-    /// db.lextends("list1", &vec![100, 200, 300]).unwrap()
+    /// db.lextend("list1", &vec![100, 200, 300]).unwrap()
     ///
     /// // add a String item to the list
     ///   .ladd(&String::from("my string"))
@@ -763,12 +770,13 @@ impl PickleDb {
     /// * `pos` - the position of the item inside the list. Expected value is >= 0
     ///
     /// # Examples
-    /// ```rust,ignore
+    /// ```no_run
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a list
     /// db.lcreate("list1");
     ///
     /// // add a number to list1
-    /// db.ladd("list1", &100));
+    /// db.ladd("list1", &100);
     ///
     /// // add a string to list1
     /// db.ladd("list1", &String::from("my string"));
@@ -860,7 +868,8 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
+    /// ```no_run
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a list
     /// db.lcreate("list1");
     ///
@@ -905,10 +914,10 @@ impl PickleDb {
 
     /// Remove an item out of a list.
     ///
-    /// This method takes a list name and a position inside the list, removes the
-    /// item in this position and returns an indication whether the item was removed or not.
+    /// This method takes a list name and a reference to a value, removes the first instance of the
+    /// value if it exists in the list, and returns an indication whether the item was removed or not.
     ///
-    /// If the list is not found in the DB or the given position is out of bounds no item will
+    /// If the list is not found in the DB or the given value isn't found in the list, no item will
     /// be removed and `Ok(false)` will be returned.
     /// If removing the item fails, which may happen mostly in cases where this action triggers
     /// a DB dump (which is decided according to the dump policy), an
@@ -921,24 +930,25 @@ impl PickleDb {
     /// # Arguments
     ///
     /// * `name` - the list key
-    /// * `pos` - the position of the item to remove
+    /// * `value` - the item to remove
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
+    /// ```no_run
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a list
     /// db.lcreate("list1");
     ///
     /// // add 4 items to the list
     /// db.lextend("list1", &vec![1,2,3,4]);
     ///
-    /// // remove item in position 2
-    /// db.lrem_value("list1", 2).unwrap();
+    /// // remove 2
+    /// db.lrem_value("list1", &2).unwrap();
     ///
-    /// // The list now looks like this: [1, 2, 4]
+    /// // The list now looks like this: [1, 3, 4]
     ///
-    /// // remove item in position 1
-    /// db.lrem_value("list1", 1).unwrap();
+    /// // remove 3
+    /// db.lrem_value("list1", &3).unwrap();
     ///
     /// // The list now looks like this: [1, 4]
     /// ```
@@ -979,7 +989,9 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
+    /// ```no_run
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
+    /// # type Rectangle = usize;
     /// // iterate over all keys and values in the db
     /// for kv in db.iter() {
     ///     match kv.get_key() {
@@ -1007,9 +1019,10 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```rust,ignore
+    /// ```no_run
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
-    /// db.lcreate("list1")
+    /// db.lcreate("list1").unwrap()
     ///   .lextend(&vec![1,2,3,4]);
     ///
     /// // iterate over the items in list1
