@@ -1,5 +1,4 @@
-PickleDB
-========
+# PickleDB
 
 [![Build Status](https://api.travis-ci.org/seladb/pickledb-rs.svg?branch=master)](https://travis-ci.org/seladb/pickledb-rs)
 [![Crate](https://img.shields.io/crates/v/pickledb.svg)](https://crates.io/crates/pickledb)
@@ -13,14 +12,14 @@ PickleDB is a lightweight and simple key-value store written in Rust, heavily in
 use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 
 fn main() {
-    
+
     // create a new DB with AutoDump (meaning every change is written to the file)
     // and with Json serialization (meaning DB will be dumped to file as a Json object)
     let mut db = PickleDb::new("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Json);
-    
+
     // set the value 100 to the key 'key1'
     db.set("key1", &100).unwrap();
-    
+
     // print the value of key1
     println!("The value of key1 is: {}", db.get::<i32>("key1").unwrap());
 
@@ -39,7 +38,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-pickledb = "0.3.0"
+pickledb = "0.4.0"
 ```
 
 ## Documentation
@@ -57,7 +56,15 @@ There are currently two examples shipped with PickleDB:
 
 ## Changelog
 
-__Version 0.3.0__
+### Version 0.4.0
+
+* Changed all doc tests from `ignore` to `no_run` so generated docs don't contain untested warnings
+* Changed both instances of `lextend` to take iterators of references rather than a slice of values
+* Fixed bug in `load_test()`
+* Fixed rustfmt and clippy warnings
+* Added examples to `Cargo.toml` to allow them to be run via Cargo
+
+### Version 0.3.0
 
 * Added new serialization options. Now PickleDB supports [JSON](https://crates.io/crates/serde_json), [Bincode](https://crates.io/crates/bincode),
   [YAML](https://crates.io/crates/serde_yaml) and [CBOR](https://crates.io/crates/serde_cbor) serializations
@@ -65,7 +72,7 @@ __Version 0.3.0__
 * Use `Path` and `PathBuf` instead of strings to describe DB paths
 * Better organization of the code
 
-__Version 0.2.0__
+### Version 0.2.0
 
 * Dump the DB to file in a crash-safe manner using a temp file (Thanks jamwt from Reddit
   for the tip: https://www.reddit.com/r/rust/comments/agumun/check_out_pickledb_a_lightweight_and_simple/ee987j0)

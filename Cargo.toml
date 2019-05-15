@@ -1,6 +1,6 @@
 [package]
 name = "pickledb"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["seladb <pcapplusplus@gmail.com>"]
 license = "MIT"
 readme = "README.md"
