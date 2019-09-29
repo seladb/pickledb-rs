@@ -526,10 +526,7 @@ fn list_with_special_strings(ser_method_int: i32) {
         db.lget::<String>("list1", 1).unwrap(),
         String::from("\'single_quotes\'")
     );
-    assert_eq!(
-        db.lget::<String>("list1", 2).unwrap(),
-        String::from("שָׁלוֹם")
-    );
+    assert_eq!(db.lget::<String>("list1", 2).unwrap(), String::from("שָׁלוֹם"));
     assert_eq!(db.lget::<String>("list1", 3).unwrap(), String::from("😻"));
     assert_eq!(
         db.lget::<String>("list1", 4).unwrap(),
