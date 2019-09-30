@@ -10,7 +10,7 @@ extern crate rstest;
 
 use rstest::rstest_parametrize;
 
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cognitive_complexity)]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn basic_lists(ser_method_int: i32) {
     test_setup!("basic_lists", ser_method_int, db_name);
@@ -526,10 +526,7 @@ fn list_with_special_strings(ser_method_int: i32) {
         db.lget::<String>("list1", 1).unwrap(),
         String::from("\'single_quotes\'")
     );
-    assert_eq!(
-        db.lget::<String>("list1", 2).unwrap(),
-        String::from("שָׁלוֹם")
-    );
+    assert_eq!(db.lget::<String>("list1", 2).unwrap(), String::from("שָׁלוֹם"));
     assert_eq!(db.lget::<String>("list1", 3).unwrap(), String::from("😻"));
     assert_eq!(
         db.lget::<String>("list1", 4).unwrap(),

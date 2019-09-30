@@ -57,7 +57,7 @@ fn load_error_test() {
     assert!(matches!(load_result_err.get_type(), ErrorType::Io));
 }
 
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cognitive_complexity)]
 #[test]
 fn dump_error_test() {
     set_test_rsc!("dump_error_test.db");

@@ -74,7 +74,7 @@ fn gen_random_string<T: Rng>(rng: &mut T, size: usize) -> String {
         .collect()
 }
 
-#[allow(clippy::cyclomatic_complexity)]
+#[allow(clippy::cognitive_complexity)]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn load_test(ser_method_int: i32) {
     test_setup!("load_test", ser_method_int, db_name);
