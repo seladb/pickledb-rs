@@ -38,7 +38,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-pickledb = "0.4.0"
+pickledb = "0.4.1"
 ```
 
 ## Documentation
@@ -55,6 +55,10 @@ There are currently two examples shipped with PickleDB:
   create new lists, add/remove items from lists, retrieve items from lists, remove lists, and more
 
 ## Changelog
+
+### Version 0.4.1
+
+* Bump up dependencies versions to fix vulnerabilities found in few of them
 
 ### Version 0.4.0
 
