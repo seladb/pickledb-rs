@@ -49,12 +49,13 @@ All documentation for this crate can be found in [docs.rs](https://docs.rs/pickl
 
 ## Examples
 
-There are currently two examples shipped with PickleDB:
+There are currently two examples shipped with PickleDB + a sample program:
 
 * [Hello World](https://github.com/seladb/pickledb-rs/tree/master/examples/hello_world) which shows the basic usage of PickleDB: 
   create a new DB, load a DB from file, get/set key-value pairs of different types, and more
 * [Lists](https://github.com/seladb/pickledb-rs/tree/master/examples/lists) which shows how to use lists in PickleDB: 
-  create new lists, add/remove items from lists, retrieve items from lists, remove lists, and more
+  create new lists, add/remove items from lists, retrieve items from lists, remove lists, and more     
+* [dibz](https://github.com/quadroli/dibz) a sample databse application for storing key value pairs.
 
 ## Changelog
 
