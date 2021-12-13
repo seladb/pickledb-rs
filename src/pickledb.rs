@@ -94,8 +94,7 @@ impl PickleDb {
         dump_policy: PickleDbDumpPolicy,
         serialization_method: SerializationMethod,
     ) -> PickleDb {
-        let load = PickleDb::load(db_path, dump_policy, serialization_method);
-        return match load {
+        return match PickleDb::load(db_path, dump_policy, serialization_method) {
             Ok(load) => load,
             Err(_) => PickleDb::new(db_path, dump_policy, serialization_method),
         };
