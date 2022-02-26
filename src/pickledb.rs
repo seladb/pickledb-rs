@@ -94,10 +94,10 @@ impl PickleDb {
         dump_policy: PickleDbDumpPolicy,
         serialization_method: SerializationMethod,
     ) -> PickleDb {
-        return match PickleDb::load(db_path, dump_policy, serialization_method) {
+        match PickleDb::load(db_path, dump_policy, serialization_method) {
             Ok(load) => load,
             Err(_) => PickleDb::new(db_path, dump_policy, serialization_method),
-        };
+        }
     }
 
     /// Constructs a new `PickleDb` instance that uses [JSON serialization](https://crates.io/crates/serde_json) for storing the data.
@@ -547,7 +547,7 @@ impl PickleDb {
         V: DeserializeOwned,
     {
         match self.map.get(key) {
-            Some(val) => self.serializer.deserialize_data::<V>(&val),
+            Some(val) => self.serializer.deserialize_data::<V>(val),
             None => None,
         }
     }
@@ -822,7 +822,7 @@ impl PickleDb {
     {
         match self.list_map.get(name) {
             Some(list) => match list.get(pos) {
-                Some(val) => self.serializer.deserialize_data::<V>(&val),
+                Some(val) => self.serializer.deserialize_data::<V>(val),
                 None => None,
             },
             None => None,
