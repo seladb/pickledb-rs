@@ -162,11 +162,11 @@ fn dump_upon_request_policy_test(ser_method_int: i32) {
     // drop DB object
     drop(db);
 
-    // verify the change is dumped to the file
+    // verify the change is not dumped to the file
     {
         let read_db = PickleDb::load_read_only(&db_name, ser_method!(ser_method_int)).unwrap();
         assert!(read_db.exists("key1"));
-        assert!(read_db.exists("key2"));
+        assert!(!read_db.exists("key2"));
     }
 }
 

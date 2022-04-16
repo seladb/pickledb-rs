@@ -1052,8 +1052,10 @@ impl PickleDb {
 
 impl Drop for PickleDb {
     fn drop(&mut self) {
-        if let PickleDbDumpPolicy::NeverDump = self.dump_policy {
-        } else {
+        if !matches!(
+            self.dump_policy,
+            PickleDbDumpPolicy::NeverDump | PickleDbDumpPolicy::DumpUponRequest
+        ) {
             // try to dump, ignore if fails
             let _ = self.dump();
         }
