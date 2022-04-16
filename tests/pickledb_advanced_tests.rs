@@ -211,7 +211,9 @@ fn load_test(ser_method_int: i32) {
         // verify key exists in db
         assert!(
             read_db.exists(&key),
-            format!("Key {} of type {} isn't found", key, val_type)
+            "Key {} of type {} isn't found",
+            key,
+            val_type
         );
 
         // get the value according to the value_type saved

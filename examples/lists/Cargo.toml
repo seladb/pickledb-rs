@@ -5,5 +5,5 @@ authors = ["seladb <pcapplusplus@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-pickledb = { path = "../../" }
+pickledb = { path = "../../", default-features = false, features = ["bincode"] }
 serde = { version = "1.0.82", features = ["derive"] }

@@ -17,16 +17,24 @@ travis-ci = { repository = "seladb/pickledb-rs" }
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-bincode = "1.0"
-serde_yaml = "0.8"
-serde_cbor = "0.11"
+
+serde_json = { version = "1.0", optional = true }
+bincode = { version = "1.0", optional = true }
+serde_yaml = { version = "0.8", optional = true }
+serde_cbor = { version = "0.11", optional = true }
 
 [dev-dependencies]
 rand = "0.6"
 rstest = "0.2"
 matches = "0.1"
 fs2 = "0.4"
+
+[features]
+default = ["json"]
+json = ["dep:serde_json"]
+bincode = ["dep:bincode"]
+yaml = ["dep:serde_yaml"]
+cbor = ["dep:serde_cbor"]
 
 [[example]]
 name = "hello_world"
