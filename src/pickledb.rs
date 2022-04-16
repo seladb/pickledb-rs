@@ -526,7 +526,7 @@ impl PickleDb {
         V: DeserializeOwned,
     {
         match self.map.get(key) {
-            Some(val) => self.serializer.deserialize_data::<V>(&val),
+            Some(val) => self.serializer.deserialize_data::<V>(val),
             None => None,
         }
     }
@@ -801,7 +801,7 @@ impl PickleDb {
     {
         match self.list_map.get(name) {
             Some(list) => match list.get(pos) {
-                Some(val) => self.serializer.deserialize_data::<V>(&val),
+                Some(val) => self.serializer.deserialize_data::<V>(val),
                 None => None,
             },
             None => None,
