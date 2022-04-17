@@ -353,7 +353,7 @@ fn rem_keys(ser_method_int: i32) {
 
     // verify both keys were removed
     for i in vec![5, 8].iter() {
-        assert_eq!(db.exists(&format!("{}{}", "key", i)), false);
+        assert!(!db.exists(&format!("{}{}", "key", i)));
     }
 
     // verify the other keys are still there
