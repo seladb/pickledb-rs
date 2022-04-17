@@ -31,7 +31,7 @@ jobs:
       - name: Install clippy
         run: rustup component add clippy
       - name: Run clippy
-        run: cargo clippy --all-targets -- --deny clippy::all
+        run: cargo clippy --all-targets --all-features -- --deny clippy::all
   fmt:
     runs-on: ubuntu-latest
     strategy:
