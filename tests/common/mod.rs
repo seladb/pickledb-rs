@@ -32,7 +32,7 @@ macro_rules! set_test_rsc {
 #[macro_export]
 macro_rules! ser_method {
     ($ser_method_int:expr) => {
-        SerializationMethod::from($ser_method_int);
+        SerializationMethod::from($ser_method_int)
     };
 }
 

@@ -210,17 +210,19 @@ fn load_test(ser_method_int: i32) {
     for (key, val_type) in map.iter() {
         // verify key exists in db
         assert!(
-            read_db.exists(&key),
-            format!("Key {} of type {} isn't found", key, val_type)
+            read_db.exists(key),
+            "Key {} of type {} isn't found",
+            key,
+            val_type
         );
 
         // get the value according to the value_type saved
         match *val_type {
-            "i32" => assert!(read_db.get::<i32>(&key).is_some()),
-            "f32" => assert!(read_db.get::<f32>(&key).is_some()),
-            "string" => assert!(read_db.get::<String>(&key).is_some()),
-            "vec" => assert!(read_db.get::<Vec<i32>>(&key).is_some()),
-            "list" => assert!(read_db.lexists(&key)),
+            "i32" => assert!(read_db.get::<i32>(key).is_some()),
+            "f32" => assert!(read_db.get::<f32>(key).is_some()),
+            "string" => assert!(read_db.get::<String>(key).is_some()),
+            "vec" => assert!(read_db.get::<Vec<i32>>(key).is_some()),
+            "list" => assert!(read_db.lexists(key)),
             _ => (),
         }
     }
