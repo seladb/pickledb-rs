@@ -64,6 +64,10 @@
 //! * [YAML serialization](https://crates.io/crates/serde_yaml)
 //! * [CBOR serialization](https://crates.io/crates/serde_cbor)
 //!
+//! The serialization types are enabled and disabled with features (`json` (enabled by default), `bincode`, `yaml`, and `cbor`).
+//! To enable them, just add their names to the `features` list when declaring the dependency. To disable JSON, set `default-features` to false.
+//! For instance, `pickledb = { version = "0.5", features = ["cbor", "yaml"], default-features = false }` would enable CBOR and YAML only.
+//!
 //! The user can choose a serialization type to use upon creating a DB or loading it from a file.
 //!
 //! So what does it mean that all objects must be serializable? That means that all objects that you use must be serializable.
