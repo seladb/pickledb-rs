@@ -1,12 +1,9 @@
 name: Rust test
 
-on:
-  push:
-    branches: [ '**' ]
-  pull_request:
-    branches: [ master ]
+on: [push, pull_request]
 
 jobs:
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -18,20 +15,22 @@ jobs:
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: ${{ matrix.rust }}
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
       - name: Build
         run: cargo build --examples --lib --bins
       - name: Test
         run: cargo test --verbose --examples --lib --bins
+
   clippy:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'ci skip')"
     steps:
-      - uses: actions/checkout@v2
-      - name: Install clippy
-        run: rustup component add clippy
+      - name: Checkout code
+        uses: actions/checkout@v2
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- --deny clippy::all
+
   fmt:
     runs-on: ubuntu-latest
     strategy:
@@ -42,8 +41,7 @@ jobs:
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: ${{ matrix.rust }}
-      - uses: actions/checkout@v2
-      - name: Install rustfmt
-        run: rustup component add rustfmt
+      - name: Checkout code
+        uses: actions/checkout@v2
       - name: Run rustfmt
         run: cargo fmt -- --check
