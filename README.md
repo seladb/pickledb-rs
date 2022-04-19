@@ -1,6 +1,5 @@
 # PickleDB
 
-[![Build Status](https://api.travis-ci.org/seladb/pickledb-rs.svg?branch=master)](https://travis-ci.org/seladb/pickledb-rs)
 [![Rust test](https://github.com/seladb/pickledb-rs/workflows/Rust%20test/badge.svg)](https://github.com/seladb/pickledb-rs/actions?query=workflow%3A%22Rust+test%22)
 [![Rust audit](https://github.com/seladb/pickledb-rs/workflows/Rust%20audit/badge.svg)](https://github.com/seladb/pickledb-rs/actions?query=workflow%3A%22Rust+audit%22)
 [![Crate](https://img.shields.io/crates/v/pickledb.svg)](https://crates.io/crates/pickledb)
