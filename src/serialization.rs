@@ -305,6 +305,7 @@ impl Serializer {
     {
         #[allow(unreachable_patterns)]
         match self.ser_method {
+            #[cfg(feature = "json")]
             SerializationMethod::Json => self.json_serializer.deserialize_data(ser_data),
             #[cfg(feature = "bincode")]
             SerializationMethod::Bin => self.bincode_serializer.deserialize_data(ser_data),
