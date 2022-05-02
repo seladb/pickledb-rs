@@ -116,6 +116,7 @@ impl PickleDb {
     /// let mut db = PickleDb::new_json("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
+    #[cfg(feature = "json")]
     pub fn new_json<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb::new(db_path, dump_policy, SerializationMethod::Json)
     }
@@ -136,6 +137,7 @@ impl PickleDb {
     /// let mut db = PickleDb::new_bin("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
+    #[cfg(feature = "bincode")]
     pub fn new_bin<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb::new(db_path, dump_policy, SerializationMethod::Bin)
     }
@@ -156,6 +158,7 @@ impl PickleDb {
     /// let mut db = PickleDb::new_yaml("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
+    #[cfg(feature = "yaml")]
     pub fn new_yaml<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb::new(db_path, dump_policy, SerializationMethod::Yaml)
     }
@@ -176,6 +179,7 @@ impl PickleDb {
     /// let mut db = PickleDb::new_cbor("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
+    #[cfg(feature = "cbor")]
     pub fn new_cbor<P: AsRef<Path>>(db_path: P, dump_policy: PickleDbDumpPolicy) -> PickleDb {
         PickleDb::new(db_path, dump_policy, SerializationMethod::Cbor)
     }
@@ -260,6 +264,7 @@ impl PickleDb {
     /// let db = PickleDb::load_json("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
+    #[cfg(feature = "json")]
     pub fn load_json<P: AsRef<Path>>(
         db_path: P,
         dump_policy: PickleDbDumpPolicy,
@@ -286,6 +291,7 @@ impl PickleDb {
     /// let db = PickleDb::load_bin("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
+    #[cfg(feature = "bincode")]
     pub fn load_bin<P: AsRef<Path>>(
         db_path: P,
         dump_policy: PickleDbDumpPolicy,
@@ -312,6 +318,7 @@ impl PickleDb {
     /// let db = PickleDb::load_yaml("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
+    #[cfg(feature = "yaml")]
     pub fn load_yaml<P: AsRef<Path>>(
         db_path: P,
         dump_policy: PickleDbDumpPolicy,
@@ -338,6 +345,7 @@ impl PickleDb {
     /// let db = PickleDb::load_cbor("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
+    #[cfg(feature = "cbor")]
     pub fn load_cbor<P: AsRef<Path>>(
         db_path: P,
         dump_policy: PickleDbDumpPolicy,
@@ -1073,8 +1081,10 @@ impl PickleDb {
 
 impl Drop for PickleDb {
     fn drop(&mut self) {
-        if let PickleDbDumpPolicy::NeverDump = self.dump_policy {
-        } else {
+        if !matches!(
+            self.dump_policy,
+            PickleDbDumpPolicy::NeverDump | PickleDbDumpPolicy::DumpUponRequest
+        ) {
             // try to dump, ignore if fails
             let _ = self.dump();
         }
