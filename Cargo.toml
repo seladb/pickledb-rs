@@ -31,10 +31,9 @@ fs2 = "0.4"
 
 [features]
 default = ["json"]
-json = ["dep:serde_json"]
-bincode = ["dep:bincode"]
-yaml = ["dep:serde_yaml"]
-cbor = ["dep:serde_cbor"]
+json = ["serde_json"]
+yaml = ["serde_yaml"]
+cbor = ["serde_cbor"]
 
 [[example]]
 name = "hello_world"
