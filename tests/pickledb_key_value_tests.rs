@@ -414,3 +414,123 @@ fn iter_test(ser_method_int: i32) {
     // verify all 5 keys were seen
     assert_eq!(keys_seen.iter().filter(|&t| *t).count(), 5);
 }
+
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
+fn basic_set_get_load_or_new(ser_method_int: i32) {
+    test_setup!("basic_set_get_load_or_new", ser_method_int, db_name);
+
+    let mut db = PickleDb::load_or_new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
+
+    // set a number
+    let num = 100;
+    db.set("num", &num).unwrap();
+
+    // set a floating point number
+    let float_num = 1.224;
+    db.set("float", &float_num).unwrap();
+
+    // set a String
+    let mystr = String::from("my string");
+    db.set("string", &mystr).unwrap();
+
+    // set a Vec
+    let myvec = vec![1, 2, 3];
+    db.set("vec", &myvec).unwrap();
+
+    // set a struct
+    #[derive(Serialize, Deserialize, Debug)]
+    struct Coor {
+        x: i32,
+        y: i32,
+    }
+    let mycoor = Coor { x: 1, y: 2 };
+    db.set("struct", &mycoor).unwrap();
+
+    // read a num
+    assert_eq!(db.get::<i32>("num").unwrap(), num);
+    // read a floating point number
+    assert_eq!(db.get::<f32>("float").unwrap(), float_num);
+    // read a String
+    assert_eq!(db.get::<String>("string").unwrap(), mystr);
+    // read a Vec
+    assert_eq!(db.get::<Vec<i32>>("vec").unwrap(), myvec);
+    // read a struct
+    assert_eq!(db.get::<Coor>("struct").unwrap().x, mycoor.x);
+    assert_eq!(db.get::<Coor>("struct").unwrap().y, mycoor.y);
+}
+
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
+fn load_or_new(ser_method_int: i32) {
+    test_setup!("load_or_new", ser_method_int, db_name);
+
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
+
+    // set a number
+    let num = 100;
+    db.set("num", &num).unwrap();
+
+    // set a floating point number
+    let float_num = 1.224;
+    db.set("float", &float_num).unwrap();
+
+    // set a String
+    let mystr = String::from("my string");
+    db.set("string", &mystr).unwrap();
+
+    // set a Vec
+    let myvec = vec![1, 2, 3];
+    db.set("vec", &myvec).unwrap();
+
+    // set a struct
+    #[derive(Serialize, Deserialize, Debug)]
+    struct Coor {
+        x: i32,
+        y: i32,
+    }
+    let mycoor = Coor { x: 1, y: 2 };
+    db.set("struct", &mycoor).unwrap();
+
+    // read a num
+    assert_eq!(db.get::<i32>("num").unwrap(), num);
+    // read a floating point number
+    assert_eq!(db.get::<f32>("float").unwrap(), float_num);
+    // read a String
+    assert_eq!(db.get::<String>("string").unwrap(), mystr);
+    // read a Vec
+    assert_eq!(db.get::<Vec<i32>>("vec").unwrap(), myvec);
+    // read a struct
+    assert_eq!(db.get::<Coor>("struct").unwrap().x, mycoor.x);
+    assert_eq!(db.get::<Coor>("struct").unwrap().y, mycoor.y);
+
+    // drop database
+    drop(db);
+
+    // create new database that should load from existing database
+    let db = PickleDb::load_or_new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
+
+    // assert data is identical to existing database
+
+    // read a num
+    assert_eq!(db.get::<i32>("num").unwrap(), num);
+    // read a floating point number
+    assert_eq!(db.get::<f32>("float").unwrap(), float_num);
+    // read a String
+    assert_eq!(db.get::<String>("string").unwrap(), mystr);
+    // read a Vec
+    assert_eq!(db.get::<Vec<i32>>("vec").unwrap(), myvec);
+    // read a struct
+    assert_eq!(db.get::<Coor>("struct").unwrap().x, mycoor.x);
+    assert_eq!(db.get::<Coor>("struct").unwrap().y, mycoor.y);
+}
