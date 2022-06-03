@@ -1,16 +1,69 @@
 #![allow(clippy::float_cmp)]
 
-use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
+mod import {
+    pub use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
+    pub use rstest::rstest_parametrize;
+}
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
+use import::*;
+
+#[cfg(feature = "nano")]
+use nanoserde::{DeBin, SerBin};
+#[cfg(not(feature = "nano"))]
 use serde::{Deserialize, Serialize};
 
 mod common;
 
+#[cfg(not(feature = "nano"))]
+#[derive(Serialize, Deserialize, Debug)]
+struct Coor {
+    x: i32,
+    y: i32,
+}
+
+#[cfg(feature = "nano")]
+#[derive(SerBin, DeBin, Debug)]
+struct Coor {
+    x: i32,
+    y: i32,
+}
+
+#[cfg(not(feature = "nano"))]
+#[derive(Serialize, Deserialize, Debug)]
+struct MySquare {
+    x: u32,
+}
+
+#[cfg(feature = "nano")]
+#[derive(SerBin, DeBin, Debug)]
+struct MySquare {
+    x: u32,
+}
+
 #[cfg(test)]
 extern crate rstest;
 
-use rstest::rstest_parametrize;
-
 #[allow(clippy::cognitive_complexity)]
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn basic_lists(ser_method_int: i32) {
     test_setup!("basic_lists", ser_method_int, db_name);
@@ -39,12 +92,6 @@ fn basic_lists(ser_method_int: i32) {
     let myvec = vec![1, 2, 3];
     assert!(db.ladd("list1", &myvec).is_some());
 
-    // add a struct to list1
-    #[derive(Serialize, Deserialize, Debug)]
-    struct Coor {
-        x: i32,
-        y: i32,
-    }
     let mycoor = Coor { x: 1, y: 2 };
     assert!(db.ladd("list1", &mycoor).is_some());
 
@@ -122,6 +169,13 @@ fn basic_lists(ser_method_int: i32) {
     assert_eq!(read_db.lget::<Coor>("list1", 4).unwrap().y, mycoor.y);
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn add_and_extend_lists(ser_method_int: i32) {
     test_setup!("add_and_extend_lists", ser_method_int, db_name);
@@ -184,6 +238,13 @@ fn add_and_extend_lists(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn override_lists(ser_method_int: i32) {
     test_setup!("override_lists", ser_method_int, db_name);
@@ -195,7 +256,14 @@ fn override_lists(ser_method_int: i32) {
     );
 
     // create a list and add some values to it
+    #[cfg(not(feature = "nano"))]
     db.lcreate("list1").unwrap().lextend(&["aa", "bb", "cc"]);
+    #[cfg(feature = "nano")]
+    db.lcreate("list1").unwrap().lextend(&[
+        String::from("aa"),
+        String::from("bb"),
+        String::from("cc"),
+    ]);
 
     // verify list len is 3
     assert_eq!(db.llen("list1"), 3);
@@ -239,6 +307,7 @@ fn override_lists(ser_method_int: i32) {
     }
 }
 
+#[cfg(all(feature = "bincode", feature = "yaml"))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn lget_corner_cases(ser_method_int: i32) {
     test_setup!("lget_corner_cases", ser_method_int, db_name);
@@ -252,24 +321,32 @@ fn lget_corner_cases(ser_method_int: i32) {
     // create a list and add some values
     db.lcreate("list1")
         .unwrap()
-        .lextend(&["hello", "world", "good", "morning"])
-        .ladd(&100);
+        .lextend(&[
+            String::from("hello"),
+            String::from("world"),
+            String::from("good"),
+            String::from("morning"),
+        ])
+        .ladd(&100_i32);
 
     // lget values that exist
     assert_eq!(db.lget::<String>("list1", 0).unwrap(), "hello");
     assert_eq!(db.lget::<i32>("list1", 4).unwrap(), 100);
 
-    // lget values that exist but in the wrong type
-    if let SerializationMethod::Bin = ser_method!(ser_method_int) {
-        // N/A
-    } else {
-        assert!(db.lget::<i32>("list1", 0).is_none());
-        assert!(db.lget::<Vec<i32>>("list1", 0).is_none());
-
-        if let SerializationMethod::Yaml = ser_method!(ser_method_int) {
+    #[cfg(not(feature = "nano"))]
+    {
+        // lget values that exist but in the wrong type
+        if let SerializationMethod::Bin = ser_method!(ser_method_int) {
             // N/A
         } else {
-            assert!(db.lget::<String>("list1", 4).is_none());
+            assert!(db.lget::<i32>("list1", 0).is_none());
+            assert!(db.lget::<Vec<i32>>("list1", 0).is_none());
+
+            if let SerializationMethod::Yaml = ser_method!(ser_method_int) {
+                // N/A
+            } else {
+                assert!(db.lget::<String>("list1", 4).is_none());
+            }
         }
     }
 
@@ -281,6 +358,13 @@ fn lget_corner_cases(ser_method_int: i32) {
     assert!(db.lget::<i32>("list2", 5).is_none());
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn add_to_non_existent_list(ser_method_int: i32) {
     test_setup!("lget_corner_cases", ser_method_int, db_name);
@@ -317,6 +401,13 @@ fn add_to_non_existent_list(ser_method_int: i32) {
     assert!(db.lextend("list1", &vec_of_nums).is_none());
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn remove_list(ser_method_int: i32) {
     test_setup!("remove_list", ser_method_int, db_name);
@@ -332,17 +423,22 @@ fn remove_list(ser_method_int: i32) {
         .unwrap()
         .lextend(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
+    #[cfg(not(feature = "nano"))]
     db.lcreate("list2")
         .unwrap()
         .lextend(&['a', 'b', 'c', 'd', 'e']);
 
     db.lcreate("list3")
         .unwrap()
-        .lextend(&[1.2, 1.3, 2.1, 3.1, 3.3, 7.889]);
+        .lextend(&[1.2_f64, 1.3_f64, 2.1_f64, 3.1_f64, 3.3_f64, 7.889_f64]);
 
-    db.lcreate("list4")
-        .unwrap()
-        .lextend(&["aaa", "bbb", "ccc", "ddd", "eee"]);
+    db.lcreate("list4").unwrap().lextend(&[
+        String::from("aaa"),
+        String::from("bbb"),
+        String::from("ccc"),
+        String::from("ddd"),
+        String::from("eee"),
+    ]);
 
     // verify number of lists in file
     {
@@ -352,30 +448,19 @@ fn remove_list(ser_method_int: i32) {
             ser_method!(ser_method_int),
         )
         .unwrap();
+        #[cfg(not(feature = "nano"))]
         assert_eq!(read_db.total_keys(), 4);
+        #[cfg(feature = "nano")]
+        assert_eq!(read_db.total_keys(), 3);
     }
 
     // remove list1 using rem
     assert!(db.rem("list1").unwrap_or(false));
 
     // verify number of lists
+    #[cfg(not(feature = "nano"))]
     assert_eq!(db.total_keys(), 3);
-
-    // verify number of lists in file
-    {
-        let read_db = PickleDb::load(
-            &db_name,
-            PickleDbDumpPolicy::NeverDump,
-            ser_method!(ser_method_int),
-        )
-        .unwrap();
-        assert_eq!(read_db.total_keys(), 3);
-    }
-
-    // remove list1 using lrem_list
-    assert_eq!(db.lrem_list("list3").unwrap_or(0), 6);
-
-    // verify number of lists
+    #[cfg(feature = "nano")]
     assert_eq!(db.total_keys(), 2);
 
     // verify number of lists in file
@@ -386,10 +471,43 @@ fn remove_list(ser_method_int: i32) {
             ser_method!(ser_method_int),
         )
         .unwrap();
+        #[cfg(not(feature = "nano"))]
+        assert_eq!(read_db.total_keys(), 3);
+        #[cfg(feature = "nano")]
         assert_eq!(read_db.total_keys(), 2);
+    }
+
+    // remove list1 using lrem_list
+    assert_eq!(db.lrem_list("list3").unwrap_or(0), 6);
+
+    // verify number of lists
+    #[cfg(not(feature = "nano"))]
+    assert_eq!(db.total_keys(), 2);
+    #[cfg(feature = "nano")]
+    assert_eq!(db.total_keys(), 1);
+
+    // verify number of lists in file
+    {
+        let read_db = PickleDb::load(
+            &db_name,
+            PickleDbDumpPolicy::NeverDump,
+            ser_method!(ser_method_int),
+        )
+        .unwrap();
+        #[cfg(not(feature = "nano"))]
+        assert_eq!(read_db.total_keys(), 2);
+        #[cfg(feature = "nano")]
+        assert_eq!(read_db.total_keys(), 1);
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn remove_values_from_list(ser_method_int: i32) {
     test_setup!("remove_values_from_list", ser_method_int, db_name);
@@ -399,12 +517,6 @@ fn remove_values_from_list(ser_method_int: i32) {
         PickleDbDumpPolicy::AutoDump,
         ser_method!(ser_method_int),
     );
-
-    // add a struct to list1
-    #[derive(Serialize, Deserialize, Debug)]
-    struct MySquare {
-        x: u32,
-    }
 
     // create a list and add some values
     db.lcreate("list1")
@@ -497,6 +609,13 @@ fn remove_values_from_list(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn list_with_special_strings(ser_method_int: i32) {
     test_setup!("list_with_special_strings", ser_method_int, db_name);
@@ -567,6 +686,13 @@ fn list_with_special_strings(ser_method_int: i32) {
     );
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn list_iter_test(ser_method_int: i32) {
     test_setup!("list_iter_test", ser_method_int, db_name);
@@ -587,6 +713,7 @@ fn list_iter_test(ser_method_int: i32) {
     );
 
     // create a list with some values
+    #[cfg(not(feature = "nano"))]
     db.lcreate("list1")
         .unwrap()
         .ladd(&values.0)
@@ -594,6 +721,14 @@ fn list_iter_test(ser_method_int: i32) {
         .ladd(&values.2)
         .ladd(&values.3)
         .ladd(&values.4);
+
+    #[cfg(feature = "nano")]
+    db.lcreate("list1")
+        .unwrap()
+        .ladd(&values.0)
+        .ladd(&values.1)
+        .ladd(&values.2)
+        .ladd(&values.3);
 
     let mut index = 0;
 
@@ -605,6 +740,7 @@ fn list_iter_test(ser_method_int: i32) {
             1 => assert_eq!(item.get_item::<f32>().unwrap(), values.1),
             2 => assert_eq!(item.get_item::<String>().unwrap(), values.2),
             3 => assert_eq!(item.get_item::<Vec<i32>>().unwrap(), values.3),
+            #[cfg(not(feature = "nano"))]
             4 => assert_eq!(item.get_item::<(char, char, char)>().unwrap(), values.4),
             _ => panic!(),
         }
@@ -612,11 +748,21 @@ fn list_iter_test(ser_method_int: i32) {
     }
 
     // verify iterator went over all the items
+    #[cfg(not(feature = "nano"))]
     assert_eq!(index, 5);
+    #[cfg(feature = "nano")]
+    assert_eq!(index, 4);
 }
 
 #[allow(unused_attributes)]
 #[should_panic]
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+    feature = "nano"
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn list_doesnt_exist_iter_test(ser_method_int: i32) {
     test_setup!("list_doesnt_exist_iter_test", ser_method_int, db_name);
@@ -637,6 +783,7 @@ fn list_doesnt_exist_iter_test(ser_method_int: i32) {
     );
 
     // create a list with some values
+    #[cfg(not(feature = "nano"))]
     db.lcreate("list1")
         .unwrap()
         .ladd(&values.0)
@@ -644,6 +791,14 @@ fn list_doesnt_exist_iter_test(ser_method_int: i32) {
         .ladd(&values.2)
         .ladd(&values.3)
         .ladd(&values.4);
+
+    #[cfg(feature = "nano")]
+    db.lcreate("list1")
+        .unwrap()
+        .ladd(&values.0)
+        .ladd(&values.1)
+        .ladd(&values.2)
+        .ladd(&values.3);
 
     // iterate over a non-existent list - should panic here
     for _item in db.liter("list2") {}

@@ -73,7 +73,7 @@ There are currently two examples shipped with PickleDB:
 
 ### Version 0.4.0
 
-- Changed all doc tests from `ignore` to `no_run` so generated docs don't contain untested warnings
+- Changed all doc tests from `ignore` to `ignore` so generated docs don't contain untested warnings
 - Changed both instances of `lextend` to take iterators of references rather than a slice of values
 - Fixed bug in `load_test()`
 - Fixed rustfmt and clippy warnings

@@ -28,8 +28,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- --deny clippy::all
+      - name: Run clippy serde
+        run: cargo clippy --all-targets --features "json cbor yaml bincode" -- --deny clippy::all
+      - name: Run clippy nano
+        run: cargo clippy --all-targets --no-default-features --features "nano" -- --deny clippy::all
 
   fmt:
     runs-on: ubuntu-latest

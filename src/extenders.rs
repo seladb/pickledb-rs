@@ -1,4 +1,7 @@
 use crate::pickledb::PickleDb;
+#[cfg(feature = "nano")]
+use nanoserde::SerBin;
+#[cfg(not(feature = "nano"))]
 use serde::Serialize;
 
 /// A struct for extending PickleDB lists and adding more items to them
@@ -23,7 +26,7 @@ impl<'a> PickleDbListExtender<'a> {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
     /// db.lcreate("list1").unwrap()
@@ -34,9 +37,18 @@ impl<'a> PickleDbListExtender<'a> {
     ///   .ladd(&vec!["aa", "bb", "cc"]);
     /// ```
     ///
+    #[cfg(not(feature = "nano"))]
     pub fn ladd<V>(&mut self, value: &V) -> PickleDbListExtender
     where
         V: Serialize,
+    {
+        self.db.ladd(&self.list_name, value).unwrap()
+    }
+
+    #[cfg(feature = "nano")]
+    pub fn ladd<V>(&mut self, value: &V) -> PickleDbListExtender
+    where
+        V: SerBin,
     {
         self.db.ladd(&self.list_name, value).unwrap()
     }
@@ -59,7 +71,7 @@ impl<'a> PickleDbListExtender<'a> {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
     /// db.lcreate("list1");
@@ -73,9 +85,19 @@ impl<'a> PickleDbListExtender<'a> {
     /// // now the list contains 6 items and looks like this: [100, 200, 300, "aa, "bb", "cc"]
     /// ```
     ///
+    #[cfg(not(feature = "nano"))]
     pub fn lextend<'i, V, I>(&mut self, seq: I) -> PickleDbListExtender
     where
         V: 'i + Serialize,
+        I: IntoIterator<Item = &'i V>,
+    {
+        self.db.lextend(&self.list_name, seq).unwrap()
+    }
+
+    #[cfg(feature = "nano")]
+    pub fn lextend<'i, V, I>(&mut self, seq: I) -> PickleDbListExtender
+    where
+        V: 'i + SerBin,
         I: IntoIterator<Item = &'i V>,
     {
         self.db.lextend(&self.list_name, seq).unwrap()

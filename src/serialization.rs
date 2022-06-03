@@ -1,35 +1,71 @@
-use serde::{de::DeserializeOwned, Serialize};
-use std::collections::HashMap;
-use std::fmt;
+mod imports {
+    #[cfg(feature = "nano")]
+    pub use nanoserde::{DeBin, SerBin};
+    #[cfg(not(feature = "nano"))]
+    pub use serde::{de::DeserializeOwned, Serialize};
+    pub use std::collections::HashMap;
+    pub use std::fmt;
+    pub use std::ops::Deref;
 
-type DbMap = HashMap<String, Vec<u8>>;
-type DbListMap = HashMap<String, Vec<Vec<u8>>>;
+    // #[cfg(not(feature = "nano"))]
+    pub type DbMap = HashMap<String, Vec<u8>>;
+    // #[cfg(not(feature = "nano"))]
+    pub type DbListMap = HashMap<String, Vec<Vec<u8>>>;
+
+    #[cfg(feature = "nano")]
+    mod hidden_types {
+        use super::*;
+
+        #[derive(DeBin, SerBin)]
+        pub struct SerializedDB(pub Vec<u8>, pub Vec<u8>);
+    }
+    #[cfg(feature = "nano")]
+    pub use hidden_types::SerializedDB;
+}
+
+use imports::*;
 
 /// An enum for specifying the serialization method to use when creating a new PickleDB database
 /// or loading one from a file
 #[derive(Debug)]
 pub enum SerializationMethod {
     /// [JSON serialization](https://crates.io/crates/serde_json)
-    Json,
+    #[cfg(any(feature = "json"))]
+    Json = 0,
 
     /// [Bincode serialization](https://crates.io/crates/bincode)
-    Bin,
+    #[cfg(any(feature = "bincode", feature = "nano"))]
+    Bin = 1,
 
     /// [YAML serialization](https://crates.io/crates/serde_yaml)
-    Yaml,
+    #[cfg(any(feature = "yaml"))]
+    Yaml = 2,
 
     /// [CBOR serialization](https://crates.io/crates/serde_cbor)
-    Cbor,
+    #[cfg(any(feature = "cbor"))]
+    Cbor = 3,
 }
 
+#[allow(unreachable_patterns)]
 impl From<i32> for SerializationMethod {
     fn from(item: i32) -> Self {
         match item {
+            #[cfg(any(feature = "json"))]
             0 => SerializationMethod::Json,
+            #[cfg(any(feature = "bincode", feature = "nano"))]
             1 => SerializationMethod::Bin,
+            #[cfg(any(feature = "yaml"))]
             2 => SerializationMethod::Yaml,
+            #[cfg(any(feature = "cbor"))]
             3 => SerializationMethod::Cbor,
+            #[cfg(any(feature = "json"))]
             _ => SerializationMethod::Json,
+            #[cfg(all(not(feature = "json"), any(feature = "bincode", feature = "nano")))]
+            _ => SerializationMethod::Bin,
+            #[cfg(all(not(feature = "json"), feature = "yaml"))]
+            _ => SerializationMethod::Yaml,
+            #[cfg(all(not(feature = "json"), feature = "cbor"))]
+            _ => SerializationMethod::Cbor,
         }
     }
 }
@@ -231,10 +267,65 @@ impl BincodeSerializer {
     }
 }
 
-#[cfg(feature = "cbor")]
+#[cfg(feature = "nano")]
+struct NanoBinSerializer {}
+
+#[cfg(feature = "nano")]
+impl NanoBinSerializer {
+    fn new() -> NanoBinSerializer {
+        NanoBinSerializer {}
+    }
+
+    fn deserialize_data<V>(&self, ser_data: &[u8]) -> Option<V>
+    where
+        V: DeBin,
+    {
+        match DeBin::deserialize_bin(ser_data) {
+            Ok(val) => Some(val),
+            Err(_) => None,
+        }
+    }
+
+    fn serialize_data<V>(&self, data: &V) -> Result<Vec<u8>, String>
+    where
+        V: SerBin,
+    {
+        Ok(SerBin::serialize_bin(data))
+    }
+
+    fn serialize_db(&self, map: &DbMap, list_map: &DbListMap) -> Result<Vec<u8>, String> {
+        let ser_db: SerializedDB =
+            SerializedDB(SerBin::serialize_bin(map), SerBin::serialize_bin(list_map));
+        self.serialize_data(&ser_db)
+    }
+
+    fn deserialize_db(&self, ser_db: &[u8]) -> Result<(DbMap, DbListMap), String> {
+        match self.deserialize_data(ser_db) {
+            Some(SerializedDB(map, list_map)) => {
+                let map: HashMap<String, Vec<u8>> = match DeBin::deserialize_bin(&map) {
+                    Ok(map) => map,
+                    Err(_) => {
+                        return Err(String::from("Cannot deserialize DB"));
+                    }
+                };
+                let list_map: HashMap<String, Vec<Vec<u8>>> =
+                    match DeBin::deserialize_bin(&list_map) {
+                        Ok(map) => map,
+                        Err(_) => {
+                            return Err(String::from("Cannot deserialize DB"));
+                        }
+                    };
+                Ok((map, list_map))
+            }
+            None => Err(String::from("Cannot deserialize DB")),
+        }
+    }
+}
+
+#[cfg(all(feature = "serde", feature = "cbor"))]
 struct CborSerializer {}
 
-#[cfg(feature = "cbor")]
+#[cfg(all(feature = "serde", feature = "cbor"))]
 impl CborSerializer {
     fn new() -> CborSerializer {
         CborSerializer {}
@@ -282,6 +373,8 @@ pub(crate) struct Serializer {
     yaml_serializer: YamlSerializer,
     #[cfg(feature = "cbor")]
     cbor_serializer: CborSerializer,
+    #[cfg(feature = "nano")]
+    nanoserdebin_serializer: NanoBinSerializer,
 }
 
 impl Serializer {
@@ -296,9 +389,12 @@ impl Serializer {
             yaml_serializer: YamlSerializer::new(),
             #[cfg(feature = "cbor")]
             cbor_serializer: CborSerializer::new(),
+            #[cfg(feature = "nano")]
+            nanoserdebin_serializer: NanoBinSerializer::new(),
         }
     }
 
+    #[cfg(not(feature = "nano"))]
     pub(crate) fn deserialize_data<V>(&self, ser_data: &[u8]) -> Option<V>
     where
         V: DeserializeOwned,
@@ -313,17 +409,22 @@ impl Serializer {
             SerializationMethod::Yaml => self.yaml_serializer.deserialize_data(ser_data),
             #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.deserialize_data(ser_data),
-            #[cfg(feature = "json")]
-            _ => self.json_serializer.deserialize_data(ser_data),
-            #[cfg(feature = "bincode")]
-            _ => self.bincode_serializer.deserialize_data(ser_data),
-            #[cfg(feature = "yaml")]
-            _ => self.yaml_serializer.deserialize_data(ser_data),
-            #[cfg(feature = "cbor")]
-            _ => self.cbor_serializer.deserialize_data(ser_data),
         }
     }
 
+    #[cfg(feature = "nano")]
+    pub(crate) fn deserialize_data<V>(&self, ser_data: &[u8]) -> Option<V>
+    where
+        V: DeBin,
+    {
+        #[allow(unreachable_patterns)]
+        match self.ser_method {
+            SerializationMethod::Bin => self.nanoserdebin_serializer.deserialize_data(ser_data),
+            _ => self.nanoserdebin_serializer.deserialize_data(ser_data),
+        }
+    }
+
+    #[cfg(not(feature = "nano"))]
     pub(crate) fn serialize_data<V>(&self, data: &V) -> Result<Vec<u8>, String>
     where
         V: Serialize,
@@ -338,14 +439,18 @@ impl Serializer {
             SerializationMethod::Yaml => self.yaml_serializer.serialize_data(data),
             #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.serialize_data(data),
-            #[cfg(feature = "json")]
-            _ => self.json_serializer.serialize_data(data),
-            #[cfg(feature = "bincode")]
-            _ => self.bincode_serializer.serialize_data(data),
-            #[cfg(feature = "yaml")]
-            _ => self.yaml_serializer.serialize_data(data),
-            #[cfg(feature = "cbor")]
-            _ => self.cbor_serializer.serialize_data(data),
+        }
+    }
+
+    #[cfg(feature = "nano")]
+    pub(crate) fn serialize_data<V>(&self, data: &V) -> Result<Vec<u8>, String>
+    where
+        V: SerBin,
+    {
+        #[allow(unreachable_patterns)]
+        match self.ser_method {
+            SerializationMethod::Bin => self.nanoserdebin_serializer.serialize_data(data),
+            _ => self.nanoserdebin_serializer.serialize_data(data),
         }
     }
 
@@ -360,18 +465,14 @@ impl Serializer {
             SerializationMethod::Json => self.json_serializer.serialize_db(map, list_map),
             #[cfg(feature = "bincode")]
             SerializationMethod::Bin => self.bincode_serializer.serialize_db(map, list_map),
+            #[cfg(feature = "nano")]
+            SerializationMethod::Bin => self.nanoserdebin_serializer.serialize_db(map, list_map),
             #[cfg(feature = "yaml")]
             SerializationMethod::Yaml => self.yaml_serializer.serialize_db(map, list_map),
             #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.serialize_db(map, list_map),
-            #[cfg(feature = "json")]
-            _ => self.json_serializer.serialize_db(map, list_map),
-            #[cfg(feature = "bincode")]
-            _ => self.bincode_serializer.serialize_db(map, list_map),
-            #[cfg(feature = "yaml")]
-            _ => self.yaml_serializer.serialize_db(map, list_map),
-            #[cfg(feature = "cbor")]
-            _ => self.cbor_serializer.serialize_db(map, list_map),
+            #[cfg(test)]
+            _ => Err(String::from("No serializer found")),
         }
     }
 
@@ -382,18 +483,12 @@ impl Serializer {
             SerializationMethod::Json => self.json_serializer.deserialize_db(ser_db),
             #[cfg(feature = "bincode")]
             SerializationMethod::Bin => self.bincode_serializer.deserialize_db(ser_db),
+            #[cfg(feature = "nano")]
+            SerializationMethod::Bin => self.nanoserdebin_serializer.deserialize_db(ser_db),
             #[cfg(feature = "yaml")]
             SerializationMethod::Yaml => self.yaml_serializer.deserialize_db(ser_db),
             #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.deserialize_db(ser_db),
-            #[cfg(feature = "json")]
-            _ => self.json_serializer.deserialize_db(ser_db),
-            #[cfg(feature = "bincode")]
-            _ => self.bincode_serializer.deserialize_db(ser_db),
-            #[cfg(feature = "yaml")]
-            _ => self.yaml_serializer.deserialize_db(ser_db),
-            #[cfg(feature = "cbor")]
-            _ => self.cbor_serializer.deserialize_db(ser_db),
         }
     }
 }

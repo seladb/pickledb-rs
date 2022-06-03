@@ -1,16 +1,15 @@
-use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
-use rand::distributions::Alphanumeric;
-use rand::seq::SliceRandom;
-use rand::{thread_rng, Rng};
-use std::collections::HashMap;
-use std::iter;
+mod import {
+    pub use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
+    pub use rand::distributions::Alphanumeric;
+    pub use rand::seq::SliceRandom;
+    pub use rand::{thread_rng, Rng};
+    pub use rstest::rstest_parametrize;
+    pub use std::collections::HashMap;
+    pub use std::iter;
+}
+use import::*;
 
 mod common;
-
-#[cfg(test)]
-extern crate rstest;
-
-use rstest::rstest_parametrize;
 
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn lists_and_values(ser_method_int: i32) {
@@ -24,15 +23,15 @@ fn lists_and_values(ser_method_int: i32) {
 
     // set a few values
     assert!(db.set("key1", &String::from("val1")).is_ok());
-    assert!(db.set("key2", &1).is_ok());
+    assert!(db.set("key2", &1_i32).is_ok());
     assert!(db.set("key3", &vec![1, 2, 3]).is_ok());
 
     // create a few lists and add values to them
-    db.lcreate("list1").unwrap().lextend(&[1, 2, 3]);
+    db.lcreate("list1").unwrap().lextend(&[1_i32, 2_i32, 3_i32]);
 
     db.lcreate("list2")
         .unwrap()
-        .ladd(&1.1)
+        .ladd(&1.1_f64)
         .ladd(&String::from("some val"));
 
     // read keys and lists

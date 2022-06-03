@@ -1,8 +1,14 @@
-use serde::de::DeserializeOwned;
-use std::collections::hash_map;
 use std::slice;
 
-use crate::serialization::Serializer;
+mod imports {
+    pub(crate) use crate::serialization::Serializer;
+    #[cfg(feature = "nano")]
+    pub use nanoserde::DeBin;
+    #[cfg(not(feature = "nano"))]
+    pub use serde::de::DeserializeOwned;
+    pub use std::collections::hash_map;
+}
+use imports::*;
 
 /// Iterator object for iterating over keys and values in PickleDB. Returned in [PickleDb::iter()](struct.PickleDb.html#method.iter)
 pub struct PickleDbIterator<'a> {
@@ -48,9 +54,19 @@ impl<'a> PickleDbIteratorItem<'a> {
     /// not a reference to the value stored in a DB but actually a new instance of it.
     /// The method returns `Some(V)` if deserialization succeeds or `None` otherwise.
     ///
+    ///
+    #[cfg(not(feature = "nano"))]
     pub fn get_value<V>(&self) -> Option<V>
     where
         V: DeserializeOwned,
+    {
+        self.serializer.deserialize_data::<V>(self.value)
+    }
+
+    #[cfg(feature = "nano")]
+    pub fn get_value<V>(&self) -> Option<V>
+    where
+        V: DeBin,
     {
         self.serializer.deserialize_data::<V>(self.value)
     }
@@ -78,6 +94,7 @@ impl<'a> Iterator for PickleDbListIterator<'a> {
 
 /// The object returned in each iteration when iterating over a PickleDB list
 pub struct PickleDbListIteratorItem<'a> {
+    #[allow(dead_code)]
     value: &'a Vec<u8>,
     serializer: &'a Serializer,
 }
@@ -91,9 +108,18 @@ impl<'a> PickleDbListIteratorItem<'a> {
     /// is not a reference to the item stored in a DB but actually a new instance of it.
     /// The method returns `Some(V)` if deserialization succeeds or `None` otherwise.
     ///
+    #[cfg(not(feature = "nano"))]
     pub fn get_item<V>(&self) -> Option<V>
     where
         V: DeserializeOwned,
+    {
+        self.serializer.deserialize_data(self.value)
+    }
+
+    #[cfg(feature = "nano")]
+    pub fn get_item<V>(&self) -> Option<V>
+    where
+        V: DeBin,
     {
         self.serializer.deserialize_data(self.value)
     }

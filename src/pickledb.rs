@@ -1,16 +1,23 @@
-use serde::{de::DeserializeOwned, Serialize};
-use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+mod imports {
+    #[cfg(feature = "nano")]
+    pub use nanoserde::{DeBin, SerBin};
+    #[cfg(not(feature = "nano"))]
+    pub use serde::{de::DeserializeOwned, Serialize};
 
-use crate::error::{Error, ErrorCode, Result};
-use crate::extenders::PickleDbListExtender;
-use crate::iterators::{PickleDbIterator, PickleDbListIterator};
-use crate::serialization::SerializationMethod;
-use crate::serialization::Serializer;
+    pub(crate) use crate::error::{Error, ErrorCode, Result};
+    pub use crate::extenders::PickleDbListExtender;
+    pub use crate::iterators::{PickleDbIterator, PickleDbListIterator};
+    pub use crate::serialization::SerializationMethod;
+    pub(crate) use crate::serialization::Serializer;
+    pub use std::collections::HashMap;
+    pub use std::fs;
+    pub use std::path::{Path, PathBuf};
+    pub use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+}
+use imports::*;
 
 /// An enum that determines the policy of dumping PickleDb changes into the file
+
 pub enum PickleDbDumpPolicy {
     /// Never dump any change, file will always remain read-only
     NeverDump,
@@ -47,7 +54,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
     ///
     /// let mut db = PickleDb::new("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Json);
@@ -81,7 +88,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
     /// let mut db = PickleDb::new_json("example.db", PickleDbDumpPolicy::AutoDump);
@@ -102,7 +109,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
     /// let mut db = PickleDb::new_bin("example.db", PickleDbDumpPolicy::AutoDump);
@@ -123,7 +130,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
     /// let mut db = PickleDb::new_yaml("example.db", PickleDbDumpPolicy::AutoDump);
@@ -144,7 +151,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
     /// let mut db = PickleDb::new_cbor("example.db", PickleDbDumpPolicy::AutoDump);
@@ -180,12 +187,13 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
     ///
     /// let db = PickleDb::load("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Yaml);
     /// ```
     ///
+    ///    
     pub fn load<P: AsRef<Path>>(
         db_path: P,
         dump_policy: PickleDbDumpPolicy,
@@ -229,7 +237,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
     /// let db = PickleDb::load_json("example.db", PickleDbDumpPolicy::AutoDump);
@@ -256,13 +264,13 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
     /// let db = PickleDb::load_bin("example.db", PickleDbDumpPolicy::AutoDump);
     /// ```
     ///
-    #[cfg(feature = "bincode")]
+    #[cfg(any(feature = "bincode", feature = "nano"))]
     pub fn load_bin<P: AsRef<Path>>(
         db_path: P,
         dump_policy: PickleDbDumpPolicy,
@@ -283,7 +291,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
     /// let db = PickleDb::load_yaml("example.db", PickleDbDumpPolicy::AutoDump);
@@ -310,7 +318,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, PickleDbDumpPolicy};
     ///
     /// let db = PickleDb::load_cbor("example.db", PickleDbDumpPolicy::AutoDump);
@@ -340,7 +348,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use pickledb::{PickleDb, SerializationMethod};
     ///
     /// let mut readonly_db = PickleDb::load_read_only("example.db", SerializationMethod::Cbor).unwrap();
@@ -431,7 +439,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # use serde::{Serialize, Deserialize};
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // set a number
@@ -456,9 +464,41 @@ impl PickleDb {
     /// db.set("key5", &mycoor).unwrap();
     /// ```
     ///
+    #[cfg(not(feature = "nano"))]
     pub fn set<V>(&mut self, key: &str, value: &V) -> Result<()>
     where
         V: Serialize,
+    {
+        if self.list_map.contains_key(key) {
+            self.list_map.remove(key);
+        }
+        let ser_data = match self.serializer.serialize_data(value) {
+            Ok(data) => data,
+            Err(err_str) => return Err(Error::new(ErrorCode::Serialization(err_str))),
+        };
+
+        let original_value = self.map.insert(String::from(key), ser_data);
+        match self.dumpdb() {
+            Ok(_) => Ok(()),
+            Err(err) => {
+                match original_value {
+                    None => {
+                        self.map.remove(key);
+                    }
+                    Some(orig_value) => {
+                        self.map.insert(String::from(key), orig_value.to_vec());
+                    }
+                }
+
+                Err(err)
+            }
+        }
+    }
+
+    #[cfg(feature = "nano")]
+    pub fn set<V>(&mut self, key: &str, value: &V) -> Result<()>
+    where
+        V: SerBin,
     {
         if self.list_map.contains_key(key) {
             self.list_map.remove(key);
@@ -501,7 +541,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # use serde::{Serialize, Deserialize};
     /// # #[derive(Serialize, Deserialize)] struct Coor { x: i32, y: i32, }
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
@@ -521,9 +561,21 @@ impl PickleDb {
     /// let coor = db.get::<Coor>("key5").unwrap();
     /// ```
     ///
+    #[cfg(not(feature = "nano"))]
     pub fn get<V>(&self, key: &str) -> Option<V>
     where
         V: DeserializeOwned,
+    {
+        match self.map.get(key) {
+            Some(val) => self.serializer.deserialize_data::<V>(val),
+            None => None,
+        }
+    }
+
+    #[cfg(feature = "nano")]
+    pub fn get<V>(&self, key: &str) -> Option<V>
+    where
+        V: DeBin,
     {
         match self.map.get(key) {
             Some(val) => self.serializer.deserialize_data::<V>(val),
@@ -672,7 +724,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
     /// db.lcreate("list1");
@@ -683,11 +735,20 @@ impl PickleDb {
     ///   .ladd(&vec!["aa", "bb", "cc"]);
     /// ```
     ///
+    #[cfg(not(feature = "nano"))]
     pub fn ladd<V>(&mut self, name: &str, value: &V) -> Option<PickleDbListExtender>
     where
         V: Serialize,
     {
         self.lextend(name, &[value])
+    }
+
+    #[cfg(feature = "nano")]
+    pub fn ladd<V>(&mut self, name: &str, value: &V) -> Option<PickleDbListExtender>
+    where
+        V: SerBin,
+    {
+        self.lextend(name, [value])
     }
 
     /// Add multiple items to an existing list.
@@ -713,7 +774,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
     /// db.lcreate("list1");
@@ -730,6 +791,7 @@ impl PickleDb {
     /// // now the list contains 5 items and looks like this: [100, 200, 300, "my string", ["aa, "bb", "cc"]]
     /// ```
     ///
+    #[cfg(not(feature = "nano"))]
     pub fn lextend<'a, V, I>(&mut self, name: &str, seq: I) -> Option<PickleDbListExtender>
     where
         V: 'a + Serialize,
@@ -762,6 +824,38 @@ impl PickleDb {
         }
     }
 
+    #[cfg(feature = "nano")]
+    pub fn lextend<'a, V, I>(&mut self, name: &str, seq: I) -> Option<PickleDbListExtender>
+    where
+        V: 'a + SerBin,
+        I: IntoIterator<Item = &'a V>,
+    {
+        let serializer = &self.serializer;
+        match self.list_map.get_mut(name) {
+            Some(list) => {
+                let original_len = list.len();
+                let serialized: Vec<Vec<u8>> = seq
+                    .into_iter()
+                    .map(|x| serializer.serialize_data(x).unwrap())
+                    .collect();
+                list.extend(serialized);
+                match self.dumpdb() {
+                    Ok(_) => (),
+                    Err(_) => {
+                        let same_list = self.list_map.get_mut(name).unwrap();
+                        same_list.truncate(original_len);
+                        return None;
+                    }
+                }
+                Some(PickleDbListExtender {
+                    db: self,
+                    list_name: String::from(name),
+                })
+            }
+
+            None => None,
+        }
+    }
     /// Get an item of of a certain list in a certain position.
     ///
     /// This method takes a list name and a position inside the list
@@ -778,7 +872,7 @@ impl PickleDb {
     /// * `pos` - the position of the item inside the list. Expected value is >= 0
     ///
     /// # Examples
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a list
     /// db.lcreate("list1");
@@ -795,9 +889,24 @@ impl PickleDb {
     /// // read the second item in the list - string
     /// let s = db.lget::<String>("list1", 1).unwrap();
     /// ```
+    #[cfg(not(feature = "nano"))]
     pub fn lget<V>(&self, name: &str, pos: usize) -> Option<V>
     where
         V: DeserializeOwned,
+    {
+        match self.list_map.get(name) {
+            Some(list) => match list.get(pos) {
+                Some(val) => self.serializer.deserialize_data::<V>(val),
+                None => None,
+            },
+            None => None,
+        }
+    }
+
+    #[cfg(feature = "nano")]
+    pub fn lget<V>(&self, name: &str, pos: usize) -> Option<V>
+    where
+        V: DeBin,
     {
         match self.list_map.get(name) {
             Some(list) => match list.get(pos) {
@@ -876,7 +985,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a list
     /// db.lcreate("list1");
@@ -895,9 +1004,36 @@ impl PickleDb {
     /// // item1 contains 2 and the list now looks like this: [1, 4]
     /// ```
     ///
+    #[cfg(not(feature = "nano"))]
     pub fn lpop<V>(&mut self, name: &str, pos: usize) -> Option<V>
     where
         V: DeserializeOwned,
+    {
+        match self.list_map.get_mut(name) {
+            Some(list) => {
+                if pos < list.len() {
+                    let res = list.remove(pos);
+                    match self.dumpdb() {
+                        Ok(_) => self.serializer.deserialize_data::<V>(&res),
+                        Err(_) => {
+                            let same_list = self.list_map.get_mut(name).unwrap();
+                            same_list.insert(pos, res);
+                            None
+                        }
+                    }
+                } else {
+                    None
+                }
+            }
+
+            None => None,
+        }
+    }
+
+    #[cfg(feature = "nano")]
+    pub fn lpop<V>(&mut self, name: &str, pos: usize) -> Option<V>
+    where
+        V: DeBin,
     {
         match self.list_map.get_mut(name) {
             Some(list) => {
@@ -942,7 +1078,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a list
     /// db.lcreate("list1");
@@ -961,6 +1097,7 @@ impl PickleDb {
     /// // The list now looks like this: [1, 4]
     /// ```
     ///
+    #[cfg(not(feature = "nano"))]
     pub fn lrem_value<V>(&mut self, name: &str, value: &V) -> Result<bool>
     where
         V: Serialize,
@@ -993,11 +1130,44 @@ impl PickleDb {
         }
     }
 
+    #[cfg(feature = "nano")]
+    pub fn lrem_value<V>(&mut self, name: &str, value: &V) -> Result<bool>
+    where
+        V: SerBin,
+    {
+        match self.list_map.get_mut(name) {
+            Some(list) => {
+                let serialized_value = match self.serializer.serialize_data(value) {
+                    Ok(val) => val,
+                    Err(err_str) => return Err(Error::new(ErrorCode::Serialization(err_str))),
+                };
+
+                match list.iter().position(|x| *x == serialized_value) {
+                    Some(pos) => {
+                        list.remove(pos);
+                        match self.dumpdb() {
+                            Ok(_) => Ok(true),
+                            Err(err) => {
+                                let same_list = self.list_map.get_mut(name).unwrap();
+                                same_list.insert(pos, serialized_value);
+                                Err(err)
+                            }
+                        }
+                    }
+
+                    None => Ok(false),
+                }
+            }
+
+            None => Ok(false),
+        }
+    }
+
     /// Return an iterator over the keys and values in the DB.
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// # type Rectangle = usize;
     /// // iterate over all keys and values in the db
@@ -1027,7 +1197,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
     /// db.lcreate("list1").unwrap()

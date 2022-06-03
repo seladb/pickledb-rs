@@ -102,6 +102,10 @@
 //! Apart from this dump policy, persistency is also kept by a implementing the `Drop` trait for the `PickleDB` object which ensures all in-memory data
 //! is dumped to the file upon destruction of the object.
 //!
+
+#[cfg(all(feature = "serde", feature = "nano"))]
+compile_error!("Either serde (json, yaml, cbor, bincode features) or nanoserde (nano feature) may be used, but not both");
+
 pub use self::extenders::PickleDbListExtender;
 pub use self::iterators::{
     PickleDbIterator, PickleDbIteratorItem, PickleDbListIterator, PickleDbListIteratorItem,
