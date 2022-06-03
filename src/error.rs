@@ -57,6 +57,8 @@ impl fmt::Debug for Error {
 impl std::error::Error for Error {}
 
 pub(crate) enum ErrorCode {
+    #[allow(dead_code)]
     Io(io::Error),
+    #[allow(dead_code)]
     Serialization(String),
 }

@@ -102,6 +102,7 @@
 //! Apart from this dump policy, persistency is also kept by a implementing the `Drop` trait for the `PickleDB` object which ensures all in-memory data
 //! is dumped to the file upon destruction of the object.
 //!
+
 pub use self::extenders::PickleDbListExtender;
 pub use self::iterators::{
     PickleDbIterator, PickleDbIteratorItem, PickleDbListIterator, PickleDbListIteratorItem,

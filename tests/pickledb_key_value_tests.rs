@@ -1,15 +1,42 @@
 #![allow(clippy::float_cmp)]
 
-use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
+mod import {
+    pub use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
+    pub use rstest::rstest_parametrize;
+}
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
+use import::*;
+
 use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Coor {
+    x: i32,
+    y: i32,
+}
 
 mod common;
 
 #[cfg(test)]
 extern crate rstest;
 
-use rstest::rstest_parametrize;
-
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn basic_set_get(ser_method_int: i32) {
     test_setup!("basic_set_get", ser_method_int, db_name);
@@ -36,12 +63,6 @@ fn basic_set_get(ser_method_int: i32) {
     let myvec = vec![1, 2, 3];
     db.set("vec", &myvec).unwrap();
 
-    // set a struct
-    #[derive(Serialize, Deserialize, Debug)]
-    struct Coor {
-        x: i32,
-        y: i32,
-    }
     let mycoor = Coor { x: 1, y: 2 };
     db.set("struct", &mycoor).unwrap();
 
@@ -58,6 +79,12 @@ fn basic_set_get(ser_method_int: i32) {
     assert_eq!(db.get::<Coor>("struct").unwrap().y, mycoor.y);
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn set_load_get(ser_method_int: i32) {
     test_setup!("set_load_get", ser_method_int, db_name);
@@ -85,12 +112,6 @@ fn set_load_get(ser_method_int: i32) {
     let myvec = vec![1, 2, 3];
     db.set("vec", &myvec).unwrap();
 
-    // set a struct
-    #[derive(Serialize, Deserialize, Debug)]
-    struct Coor {
-        x: i32,
-        y: i32,
-    }
     let mycoor = Coor { x: 1, y: 2 };
     db.set("struct", &mycoor).unwrap();
 
@@ -113,6 +134,12 @@ fn set_load_get(ser_method_int: i32) {
     assert_eq!(read_db.get::<Coor>("struct").unwrap().y, mycoor.y);
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn set_load_get_auto_dump(ser_method_int: i32) {
     test_setup!("set_load_get_auto_dump", ser_method_int, db_name);
@@ -140,12 +167,6 @@ fn set_load_get_auto_dump(ser_method_int: i32) {
     let myvec = vec![1, 2, 3];
     db.set("vec", &myvec).unwrap();
 
-    // set a struct
-    #[derive(Serialize, Deserialize, Debug)]
-    struct Coor {
-        x: i32,
-        y: i32,
-    }
     let mycoor = Coor { x: 1, y: 2 };
     db.set("struct", &mycoor).unwrap();
 
@@ -164,6 +185,7 @@ fn set_load_get_auto_dump(ser_method_int: i32) {
     assert_eq!(read_db.get::<Coor>("struct").unwrap().y, mycoor.y);
 }
 
+#[cfg(any(feature = "bincode"))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn set_load_get_auto_dump2(ser_method_int: i32) {
     test_setup!("set_load_get_auto_dump2", ser_method_int, db_name);
@@ -209,6 +231,7 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
     db.set("num", &vec![1, 2, 3]).unwrap();
 
     // read the new value
+    #[allow(irrefutable_let_patterns)]
     if let SerializationMethod::Bin = ser_method!(ser_method_int) {
         // N/A
     } else {
@@ -221,6 +244,12 @@ fn set_load_get_auto_dump2(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn set_special_strings(ser_method_int: i32) {
     test_setup!("set_special_strings", ser_method_int, db_name);
@@ -268,6 +297,7 @@ fn set_special_strings(ser_method_int: i32) {
     );
 }
 
+#[cfg(feature = "yaml")]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn edge_cases(ser_method_int: i32) {
     test_setup!("edge_cases", ser_method_int, db_name);
@@ -287,6 +317,7 @@ fn edge_cases(ser_method_int: i32) {
 
     assert_eq!(db.get::<i32>("num"), Some(x));
     assert_eq!(read_db.get::<i32>("num"), Some(x));
+    #[allow(irrefutable_let_patterns)]
     if let SerializationMethod::Yaml = ser_method!(ser_method_int) {
         // N/A
     } else {
@@ -295,6 +326,12 @@ fn edge_cases(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn get_all_keys(ser_method_int: i32) {
     test_setup!("get_all_keys", ser_method_int, db_name);
@@ -327,6 +364,12 @@ fn get_all_keys(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn rem_keys(ser_method_int: i32) {
     test_setup!("rem_keys", ser_method_int, db_name);
@@ -366,6 +409,12 @@ fn rem_keys(ser_method_int: i32) {
     assert_eq!(read_db.total_keys(), 8);
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn iter_test(ser_method_int: i32) {
     test_setup!("iter_test", ser_method_int, db_name);
@@ -379,10 +428,10 @@ fn iter_test(ser_method_int: i32) {
 
     let keys = vec!["key1", "key2", "key3", "key4", "key5"];
     // add a few keys and values
-    db.set(keys[0], &1).unwrap();
-    db.set(keys[1], &1.1).unwrap();
+    db.set(keys[0], &1_i64).unwrap();
+    db.set(keys[1], &1.1_f64).unwrap();
     db.set(keys[2], &String::from("value1")).unwrap();
-    db.set(keys[3], &vec![1, 2, 3]).unwrap();
+    db.set(keys[3], &vec![1_i32, 2_i32, 3_i32]).unwrap();
     db.set(keys[4], &('a', 'b', 'c')).unwrap();
 
     // iterate the db
@@ -403,6 +452,7 @@ fn iter_test(ser_method_int: i32) {
                 String::from("value1")
             ),
             "key4" => assert_eq!(key_value.get_value::<Vec<i32>>().unwrap(), vec![1, 2, 3]),
+
             "key5" => assert_eq!(
                 key_value.get_value::<(char, char, char)>().unwrap(),
                 ('a', 'b', 'c')

@@ -1,14 +1,28 @@
-use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
-use std::time::Duration;
-use std::{thread, time};
+mod imports {
+    pub use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
+    pub use rstest::rstest_parametrize;
+    pub use std::time::Duration;
+    pub use std::{thread, time};
+}
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
+use imports::*;
 
 mod common;
 
 #[cfg(test)]
 extern crate rstest;
 
-use rstest::rstest_parametrize;
-
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn auto_dump_policy_test(ser_method_int: i32) {
     test_setup!("auto_dump_policy_test", ser_method_int, db_name);
@@ -85,6 +99,12 @@ fn auto_dump_policy_test(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn read_only_policy_test(ser_method_int: i32) {
     test_setup!("read_only_policy_test", ser_method_int, db_name);
@@ -132,6 +152,12 @@ fn read_only_policy_test(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn dump_upon_request_policy_test(ser_method_int: i32) {
     test_setup!("dump_upon_request_policy_test", ser_method_int, db_name);
@@ -170,6 +196,12 @@ fn dump_upon_request_policy_test(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn periodic_dump_policy_test(ser_method_int: i32) {
     test_setup!("periodic_dump_policy_test", ser_method_int, db_name);

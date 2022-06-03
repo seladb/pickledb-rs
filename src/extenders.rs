@@ -23,7 +23,7 @@ impl<'a> PickleDbListExtender<'a> {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
     /// db.lcreate("list1").unwrap()
@@ -59,7 +59,7 @@ impl<'a> PickleDbListExtender<'a> {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     /// // create a new list
     /// db.lcreate("list1");

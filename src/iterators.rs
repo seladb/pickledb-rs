@@ -1,8 +1,11 @@
-use serde::de::DeserializeOwned;
-use std::collections::hash_map;
 use std::slice;
 
-use crate::serialization::Serializer;
+mod imports {
+    pub(crate) use crate::serialization::Serializer;
+    pub use serde::de::DeserializeOwned;
+    pub use std::collections::hash_map;
+}
+use imports::*;
 
 /// Iterator object for iterating over keys and values in PickleDB. Returned in [PickleDb::iter()](struct.PickleDb.html#method.iter)
 pub struct PickleDbIterator<'a> {
@@ -48,6 +51,7 @@ impl<'a> PickleDbIteratorItem<'a> {
     /// not a reference to the value stored in a DB but actually a new instance of it.
     /// The method returns `Some(V)` if deserialization succeeds or `None` otherwise.
     ///
+    ///
     pub fn get_value<V>(&self) -> Option<V>
     where
         V: DeserializeOwned,
@@ -78,6 +82,7 @@ impl<'a> Iterator for PickleDbListIterator<'a> {
 
 /// The object returned in each iteration when iterating over a PickleDB list
 pub struct PickleDbListIteratorItem<'a> {
+    #[allow(dead_code)]
     value: &'a Vec<u8>,
     serializer: &'a Serializer,
 }

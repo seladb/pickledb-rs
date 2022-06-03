@@ -15,9 +15,11 @@ edition = "2018"
 [badges]
 travis-ci = { repository = "seladb/pickledb-rs" }
 
-[dependencies]
-serde = { version = "1.0", features = ["derive"] }
+[lib]
+doctest = false
 
+[dependencies]
+serde = { version = "1.0", features = ["derive"], optional = true }
 serde_json = { version = "1.0", optional = true }
 bincode = { version = "1.0", optional = true }
 serde_yaml = { version = "0.8", optional = true }
@@ -31,10 +33,11 @@ fs2 = "0.4"
 
 [features]
 default = ["json"]
-json = ["dep:serde_json"]
-bincode = ["dep:bincode"]
-yaml = ["dep:serde_yaml"]
-cbor = ["dep:serde_cbor"]
+serde = ["dep:serde"]
+json = ["dep:serde_json", "serde"]
+bincode = ["dep:bincode", "serde"]
+yaml = ["dep:serde_yaml", "serde"]
+cbor = ["dep:serde_cbor", "serde"]
 
 [[example]]
 name = "hello_world"

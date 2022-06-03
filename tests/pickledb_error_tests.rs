@@ -1,16 +1,25 @@
-use pickledb::error::ErrorType;
-use pickledb::{PickleDb, PickleDbDumpPolicy};
+#[cfg(any(feature = "json", feature = "bincode", feature = "yaml",))]
+mod imports {
+    pub use fs2::FileExt;
+    pub use pickledb::error::ErrorType;
+    pub use pickledb::{PickleDb, PickleDbDumpPolicy};
+    pub use std::fs::File;
+}
 
-#[macro_use(matches)]
-extern crate matches;
-extern crate fs2;
-
-use fs2::FileExt;
-use std::fs::File;
+#[allow(unused_imports)]
+#[cfg(any(feature = "json", feature = "bincode", feature = "yaml",))]
+use imports::*;
 
 mod common;
 
 #[test]
+#[cfg(all(
+    feature = "serde",
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml"
+))]
 fn load_serialization_error_test() {
     set_test_rsc!("json_db.db");
 
@@ -49,6 +58,7 @@ fn load_serialization_error_test() {
 }
 
 #[test]
+#[cfg(any(feature = "bincode"))]
 fn load_error_test() {
     // load a file that doesn't exist and make sure we get an IO error
     let load_result = PickleDb::load_bin("doesnt_exists.db", PickleDbDumpPolicy::NeverDump);
@@ -58,6 +68,7 @@ fn load_error_test() {
 }
 
 #[allow(clippy::cognitive_complexity)]
+#[cfg(feature = "json")]
 #[test]
 fn dump_error_test() {
     set_test_rsc!("dump_error_test.db");

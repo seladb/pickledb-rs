@@ -1,35 +1,56 @@
-use serde::{de::DeserializeOwned, Serialize};
-use std::collections::HashMap;
-use std::fmt;
+mod imports {
+    pub use serde::{de::DeserializeOwned, Serialize};
+    pub use std::collections::HashMap;
+    pub use std::fmt;
+    pub use std::ops::Deref;
 
-type DbMap = HashMap<String, Vec<u8>>;
-type DbListMap = HashMap<String, Vec<Vec<u8>>>;
+    pub type DbMap = HashMap<String, Vec<u8>>;
+    pub type DbListMap = HashMap<String, Vec<Vec<u8>>>;
+}
+
+use imports::*;
 
 /// An enum for specifying the serialization method to use when creating a new PickleDB database
 /// or loading one from a file
 #[derive(Debug)]
 pub enum SerializationMethod {
     /// [JSON serialization](https://crates.io/crates/serde_json)
-    Json,
+    #[cfg(any(feature = "json"))]
+    Json = 0,
 
     /// [Bincode serialization](https://crates.io/crates/bincode)
-    Bin,
+    #[cfg(any(feature = "bincode"))]
+    Bin = 1,
 
     /// [YAML serialization](https://crates.io/crates/serde_yaml)
-    Yaml,
+    #[cfg(any(feature = "yaml"))]
+    Yaml = 2,
 
     /// [CBOR serialization](https://crates.io/crates/serde_cbor)
-    Cbor,
+    #[cfg(any(feature = "cbor"))]
+    Cbor = 3,
 }
 
+#[allow(unreachable_patterns)]
 impl From<i32> for SerializationMethod {
     fn from(item: i32) -> Self {
         match item {
+            #[cfg(any(feature = "json"))]
             0 => SerializationMethod::Json,
+            #[cfg(any(feature = "bincode"))]
             1 => SerializationMethod::Bin,
+            #[cfg(any(feature = "yaml"))]
             2 => SerializationMethod::Yaml,
+            #[cfg(any(feature = "cbor"))]
             3 => SerializationMethod::Cbor,
+            #[cfg(any(feature = "json"))]
             _ => SerializationMethod::Json,
+            #[cfg(all(not(feature = "json"), any(feature = "bincode")))]
+            _ => SerializationMethod::Bin,
+            #[cfg(all(not(feature = "json"), feature = "yaml"))]
+            _ => SerializationMethod::Yaml,
+            #[cfg(all(not(feature = "json"), feature = "cbor"))]
+            _ => SerializationMethod::Cbor,
         }
     }
 }
@@ -231,10 +252,10 @@ impl BincodeSerializer {
     }
 }
 
-#[cfg(feature = "cbor")]
+#[cfg(all(feature = "serde", feature = "cbor"))]
 struct CborSerializer {}
 
-#[cfg(feature = "cbor")]
+#[cfg(all(feature = "serde", feature = "cbor"))]
 impl CborSerializer {
     fn new() -> CborSerializer {
         CborSerializer {}
@@ -313,14 +334,6 @@ impl Serializer {
             SerializationMethod::Yaml => self.yaml_serializer.deserialize_data(ser_data),
             #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.deserialize_data(ser_data),
-            #[cfg(feature = "json")]
-            _ => self.json_serializer.deserialize_data(ser_data),
-            #[cfg(feature = "bincode")]
-            _ => self.bincode_serializer.deserialize_data(ser_data),
-            #[cfg(feature = "yaml")]
-            _ => self.yaml_serializer.deserialize_data(ser_data),
-            #[cfg(feature = "cbor")]
-            _ => self.cbor_serializer.deserialize_data(ser_data),
         }
     }
 
@@ -338,14 +351,6 @@ impl Serializer {
             SerializationMethod::Yaml => self.yaml_serializer.serialize_data(data),
             #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.serialize_data(data),
-            #[cfg(feature = "json")]
-            _ => self.json_serializer.serialize_data(data),
-            #[cfg(feature = "bincode")]
-            _ => self.bincode_serializer.serialize_data(data),
-            #[cfg(feature = "yaml")]
-            _ => self.yaml_serializer.serialize_data(data),
-            #[cfg(feature = "cbor")]
-            _ => self.cbor_serializer.serialize_data(data),
         }
     }
 
@@ -364,14 +369,8 @@ impl Serializer {
             SerializationMethod::Yaml => self.yaml_serializer.serialize_db(map, list_map),
             #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.serialize_db(map, list_map),
-            #[cfg(feature = "json")]
-            _ => self.json_serializer.serialize_db(map, list_map),
-            #[cfg(feature = "bincode")]
-            _ => self.bincode_serializer.serialize_db(map, list_map),
-            #[cfg(feature = "yaml")]
-            _ => self.yaml_serializer.serialize_db(map, list_map),
-            #[cfg(feature = "cbor")]
-            _ => self.cbor_serializer.serialize_db(map, list_map),
+            #[cfg(test)]
+            _ => Err(String::from("No serializer found")),
         }
     }
 
@@ -386,14 +385,6 @@ impl Serializer {
             SerializationMethod::Yaml => self.yaml_serializer.deserialize_db(ser_db),
             #[cfg(feature = "cbor")]
             SerializationMethod::Cbor => self.cbor_serializer.deserialize_db(ser_db),
-            #[cfg(feature = "json")]
-            _ => self.json_serializer.deserialize_db(ser_db),
-            #[cfg(feature = "bincode")]
-            _ => self.bincode_serializer.deserialize_db(ser_db),
-            #[cfg(feature = "yaml")]
-            _ => self.yaml_serializer.deserialize_db(ser_db),
-            #[cfg(feature = "cbor")]
-            _ => self.cbor_serializer.deserialize_db(ser_db),
         }
     }
 }

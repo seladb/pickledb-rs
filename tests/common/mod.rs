@@ -6,6 +6,7 @@ pub struct TestResources {
 }
 
 impl TestResources {
+    #[allow(dead_code)]
     pub fn new(file: &str) -> TestResources {
         TestResources {
             file: String::from(file),

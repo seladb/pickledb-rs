@@ -1,16 +1,48 @@
 #![allow(clippy::float_cmp)]
 
-use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
+mod import {
+    pub use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
+    pub use rstest::rstest_parametrize;
+}
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
+use import::*;
+
 use serde::{Deserialize, Serialize};
 
 mod common;
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Coor {
+    x: i32,
+    y: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct MySquare {
+    x: u32,
+}
+
 #[cfg(test)]
 extern crate rstest;
 
-use rstest::rstest_parametrize;
-
 #[allow(clippy::cognitive_complexity)]
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn basic_lists(ser_method_int: i32) {
     test_setup!("basic_lists", ser_method_int, db_name);
@@ -39,12 +71,6 @@ fn basic_lists(ser_method_int: i32) {
     let myvec = vec![1, 2, 3];
     assert!(db.ladd("list1", &myvec).is_some());
 
-    // add a struct to list1
-    #[derive(Serialize, Deserialize, Debug)]
-    struct Coor {
-        x: i32,
-        y: i32,
-    }
     let mycoor = Coor { x: 1, y: 2 };
     assert!(db.ladd("list1", &mycoor).is_some());
 
@@ -122,6 +148,12 @@ fn basic_lists(ser_method_int: i32) {
     assert_eq!(read_db.lget::<Coor>("list1", 4).unwrap().y, mycoor.y);
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn add_and_extend_lists(ser_method_int: i32) {
     test_setup!("add_and_extend_lists", ser_method_int, db_name);
@@ -184,6 +216,12 @@ fn add_and_extend_lists(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn override_lists(ser_method_int: i32) {
     test_setup!("override_lists", ser_method_int, db_name);
@@ -239,6 +277,7 @@ fn override_lists(ser_method_int: i32) {
     }
 }
 
+#[cfg(all(feature = "bincode", feature = "yaml"))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn lget_corner_cases(ser_method_int: i32) {
     test_setup!("lget_corner_cases", ser_method_int, db_name);
@@ -252,24 +291,31 @@ fn lget_corner_cases(ser_method_int: i32) {
     // create a list and add some values
     db.lcreate("list1")
         .unwrap()
-        .lextend(&["hello", "world", "good", "morning"])
-        .ladd(&100);
+        .lextend(&[
+            String::from("hello"),
+            String::from("world"),
+            String::from("good"),
+            String::from("morning"),
+        ])
+        .ladd(&100_i32);
 
     // lget values that exist
     assert_eq!(db.lget::<String>("list1", 0).unwrap(), "hello");
     assert_eq!(db.lget::<i32>("list1", 4).unwrap(), 100);
 
-    // lget values that exist but in the wrong type
-    if let SerializationMethod::Bin = ser_method!(ser_method_int) {
-        // N/A
-    } else {
-        assert!(db.lget::<i32>("list1", 0).is_none());
-        assert!(db.lget::<Vec<i32>>("list1", 0).is_none());
-
-        if let SerializationMethod::Yaml = ser_method!(ser_method_int) {
+    {
+        // lget values that exist but in the wrong type
+        if let SerializationMethod::Bin = ser_method!(ser_method_int) {
             // N/A
         } else {
-            assert!(db.lget::<String>("list1", 4).is_none());
+            assert!(db.lget::<i32>("list1", 0).is_none());
+            assert!(db.lget::<Vec<i32>>("list1", 0).is_none());
+
+            if let SerializationMethod::Yaml = ser_method!(ser_method_int) {
+                // N/A
+            } else {
+                assert!(db.lget::<String>("list1", 4).is_none());
+            }
         }
     }
 
@@ -281,6 +327,12 @@ fn lget_corner_cases(ser_method_int: i32) {
     assert!(db.lget::<i32>("list2", 5).is_none());
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn add_to_non_existent_list(ser_method_int: i32) {
     test_setup!("lget_corner_cases", ser_method_int, db_name);
@@ -317,6 +369,12 @@ fn add_to_non_existent_list(ser_method_int: i32) {
     assert!(db.lextend("list1", &vec_of_nums).is_none());
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn remove_list(ser_method_int: i32) {
     test_setup!("remove_list", ser_method_int, db_name);
@@ -338,11 +396,15 @@ fn remove_list(ser_method_int: i32) {
 
     db.lcreate("list3")
         .unwrap()
-        .lextend(&[1.2, 1.3, 2.1, 3.1, 3.3, 7.889]);
+        .lextend(&[1.2_f64, 1.3_f64, 2.1_f64, 3.1_f64, 3.3_f64, 7.889_f64]);
 
-    db.lcreate("list4")
-        .unwrap()
-        .lextend(&["aaa", "bbb", "ccc", "ddd", "eee"]);
+    db.lcreate("list4").unwrap().lextend(&[
+        String::from("aaa"),
+        String::from("bbb"),
+        String::from("ccc"),
+        String::from("ddd"),
+        String::from("eee"),
+    ]);
 
     // verify number of lists in file
     {
@@ -390,6 +452,12 @@ fn remove_list(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn remove_values_from_list(ser_method_int: i32) {
     test_setup!("remove_values_from_list", ser_method_int, db_name);
@@ -399,12 +467,6 @@ fn remove_values_from_list(ser_method_int: i32) {
         PickleDbDumpPolicy::AutoDump,
         ser_method!(ser_method_int),
     );
-
-    // add a struct to list1
-    #[derive(Serialize, Deserialize, Debug)]
-    struct MySquare {
-        x: u32,
-    }
 
     // create a list and add some values
     db.lcreate("list1")
@@ -497,6 +559,12 @@ fn remove_values_from_list(ser_method_int: i32) {
     }
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn list_with_special_strings(ser_method_int: i32) {
     test_setup!("list_with_special_strings", ser_method_int, db_name);
@@ -567,6 +635,12 @@ fn list_with_special_strings(ser_method_int: i32) {
     );
 }
 
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn list_iter_test(ser_method_int: i32) {
     test_setup!("list_iter_test", ser_method_int, db_name);
@@ -617,6 +691,12 @@ fn list_iter_test(ser_method_int: i32) {
 
 #[allow(unused_attributes)]
 #[should_panic]
+#[cfg(any(
+    feature = "json",
+    feature = "bincode",
+    feature = "cbor",
+    feature = "yaml",
+))]
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
 fn list_doesnt_exist_iter_test(ser_method_int: i32) {
     test_setup!("list_doesnt_exist_iter_test", ser_method_int, db_name);
