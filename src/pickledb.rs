@@ -89,12 +89,12 @@ impl PickleDb {
     /// let mut db = PickleDb::load_or_new("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Json);
     /// ```
     ///
-    pub fn load_or_new<P: AsRef<Path> + Copy>(
+    pub fn load_or_new<P: AsRef<Path> + Clone>(
         db_path: P,
         dump_policy: PickleDbDumpPolicy,
         serialization_method: SerializationMethod,
     ) -> PickleDb {
-        match PickleDb::load(db_path, dump_policy, serialization_method) {
+        match PickleDb::load(db_path.clone(), dump_policy, serialization_method) {
             Ok(load) => load,
             Err(_) => PickleDb::new(db_path, dump_policy, serialization_method),
         }
