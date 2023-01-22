@@ -89,17 +89,17 @@ impl PickleDb {
     /// let mut db = PickleDb::load_or_new("example.db", PickleDbDumpPolicy::AutoDump, SerializationMethod::Json);
     /// ```
     ///
-    pub fn load_or_new<P: AsRef<Path> + Clone>(
+    pub fn load_or_new<P: AsRef<Path>>(
         db_path: P,
         dump_policy: PickleDbDumpPolicy,
         serialization_method: SerializationMethod,
-    ) -> PickleDb {
-        match PickleDb::load(db_path.clone(), dump_policy, serialization_method) {
-            Ok(load) => load,
-            Err(_) => PickleDb::new(db_path, dump_policy, serialization_method),
+    ) -> Result<PickleDb> {
+        match db_path.as_ref().exists() {
+            true => PickleDb::load(db_path, dump_policy, serialization_method),
+            false => Ok(PickleDb::new(db_path, dump_policy, serialization_method)),
         }
     }
-
+    
     /// Constructs a new `PickleDb` instance that uses [JSON serialization](https://crates.io/crates/serde_json) for storing the data.
     ///
     /// # Arguments
