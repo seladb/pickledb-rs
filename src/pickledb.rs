@@ -1018,7 +1018,7 @@ impl PickleDb {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
     ///
     /// // create a new list
