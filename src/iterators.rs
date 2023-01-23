@@ -56,23 +56,56 @@ impl<'a> PickleDbIteratorItem<'a> {
     }
 }
 
-/// Iterator object for iterating over items in a PickleDB list. Returned in [PickleDb::liter()](struct.PickleDb.html#method.liter)
+/// Iterator object for iterating over all the lists in a PickleDB.
+///
+/// Returned in [PickleDb::liter()](struct.PickleDb.html#method.liter)
 pub struct PickleDbListIterator<'a> {
-    pub(crate) list_iter: slice::Iter<'a, Vec<u8>>,
+    pub(crate) list_iter: hash_map::Iter<'a, String, Vec<Vec<u8>>>,
     pub(crate) serializer: &'a Serializer,
 }
 
 impl<'a> Iterator for PickleDbListIterator<'a> {
-    type Item = PickleDbListIteratorItem<'a>;
+    type Item = PickleDbListItemIterator<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.list_iter.next() {
+            Some((key, value)) => Some(PickleDbListItemIterator {
+                name: key.as_str(),
+                list_item_iter: value.iter(),
+                serializer: self.serializer,
+            }),
+            None => None,
+        }
+    }
+}
+
+/// Iterator object for iterating over items in a PickleDB list.
+///
+/// Returned in [PickleDb::liter()](struct.PickleDb.html#method.liter)
+pub struct PickleDbListItemIterator<'a> {
+    pub(crate) name: &'a str,
+    pub(crate) list_item_iter: slice::Iter<'a, Vec<u8>>,
+    pub(crate) serializer: &'a Serializer,
+}
+
+impl<'a> Iterator for PickleDbListItemIterator<'a> {
+    type Item = PickleDbListIteratorItem<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.list_item_iter.next() {
             Some(value) => Some(PickleDbListIteratorItem {
                 value,
                 serializer: self.serializer,
             }),
             None => None,
         }
+    }
+}
+
+impl<'a> PickleDbListItemIterator<'a> {
+    /// Get the name of the list for this iterator.
+    pub fn name(&self) -> &'a str {
+        self.name
     }
 }
 

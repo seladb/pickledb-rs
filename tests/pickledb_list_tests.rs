@@ -598,7 +598,7 @@ fn list_iter_test(ser_method_int: i32) {
     let mut index = 0;
 
     // iterate over the list
-    for item in db.liter("list1") {
+    for item in db.liter_get("list1") {
         // check each item
         match index {
             0 => assert_eq!(item.get_item::<i32>().unwrap(), values.0),
@@ -646,5 +646,5 @@ fn list_doesnt_exist_iter_test(ser_method_int: i32) {
         .ladd(&values.4);
 
     // iterate over a non-existent list - should panic here
-    for _item in db.liter("list2") {}
+    for _item in db.liter_get("list2") {}
 }
