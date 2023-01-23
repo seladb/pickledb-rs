@@ -81,7 +81,7 @@ impl<'a> Iterator for PickleDbListIterator<'a> {
 
 /// Iterator object for iterating over items in a PickleDB list.
 ///
-/// Returned in [PickleDb::liter()](struct.PickleDb.html#method.liter)
+/// Returned in [PickleDb::liter_get()](struct.PickleDb.html#method.liter_get)
 pub struct PickleDbListItemIterator<'a> {
     pub(crate) name: &'a str,
     pub(crate) list_item_iter: slice::Iter<'a, Vec<u8>>,
@@ -89,11 +89,11 @@ pub struct PickleDbListItemIterator<'a> {
 }
 
 impl<'a> Iterator for PickleDbListItemIterator<'a> {
-    type Item = PickleDbListIteratorItem<'a>;
+    type Item = PickleDbListItem<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.list_item_iter.next() {
-            Some(value) => Some(PickleDbListIteratorItem {
+            Some(value) => Some(PickleDbListItem {
                 value,
                 serializer: self.serializer,
             }),
@@ -110,12 +110,12 @@ impl<'a> PickleDbListItemIterator<'a> {
 }
 
 /// The object returned in each iteration when iterating over a PickleDB list
-pub struct PickleDbListIteratorItem<'a> {
+pub struct PickleDbListItem<'a> {
     value: &'a Vec<u8>,
     serializer: &'a Serializer,
 }
 
-impl<'a> PickleDbListIteratorItem<'a> {
+impl<'a> PickleDbListItem<'a> {
     /// Get the item in the current position.
     ///
     /// This method retrieves the item in the current position. It's the user's responsibility

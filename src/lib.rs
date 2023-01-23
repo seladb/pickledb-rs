@@ -104,7 +104,8 @@
 //!
 pub use self::extenders::PickleDbListExtender;
 pub use self::iterators::{
-    PickleDbIterator, PickleDbIteratorItem, PickleDbListIterator, PickleDbListIteratorItem,
+    PickleDbIterator, PickleDbIteratorItem, PickleDbListItem, PickleDbListItemIterator,
+    PickleDbListIterator,
 };
 pub use self::pickledb::{PickleDb, PickleDbDumpPolicy};
 pub use self::serialization::SerializationMethod;
