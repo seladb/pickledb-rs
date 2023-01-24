@@ -579,14 +579,8 @@ impl PickleDb {
     ///
     pub fn get_all(&self) -> Vec<String> {
         [
-            self.map
-                .iter()
-                .map(|(key, _)| key.clone())
-                .collect::<Vec<String>>(),
-            self.list_map
-                .iter()
-                .map(|(key, _)| key.clone())
-                .collect::<Vec<String>>(),
+            self.map.keys().cloned().collect::<Vec<String>>(),
+            self.list_map.keys().cloned().collect::<Vec<String>>(),
         ]
         .concat()
     }
