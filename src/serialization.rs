@@ -7,7 +7,7 @@ type DbListMap = HashMap<String, Vec<Vec<u8>>>;
 
 /// An enum for specifying the serialization method to use when creating a new PickleDB database
 /// or loading one from a file
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum SerializationMethod {
     /// [JSON serialization](https://crates.io/crates/serde_json)
     Json,
