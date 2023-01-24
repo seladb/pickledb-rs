@@ -99,7 +99,7 @@ impl PickleDb {
             false => Ok(PickleDb::new(db_path, dump_policy, serialization_method)),
         }
     }
-    
+
     /// Constructs a new `PickleDb` instance that uses [JSON serialization](https://crates.io/crates/serde_json) for storing the data.
     ///
     /// # Arguments
