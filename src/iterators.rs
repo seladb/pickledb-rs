@@ -64,6 +64,7 @@ pub struct PickleDbListIterator<'a> {
     pub(crate) serializer: &'a Serializer,
 }
 
+/// Iterator implementation for the primary iterator PickleDbListIterator
 impl<'a> Iterator for PickleDbListIterator<'a> {
     type Item = PickleDbListItemIterator<'a>;
 
@@ -88,6 +89,7 @@ pub struct PickleDbListItemIterator<'a> {
     pub(crate) serializer: &'a Serializer,
 }
 
+/// Iterator implementation for the list item iterator PickleDbListItemIterator.
 impl<'a> Iterator for PickleDbListItemIterator<'a> {
     type Item = PickleDbListItem<'a>;
 

@@ -6,7 +6,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use crate::error::{Error, ErrorCode, Result};
 use crate::extenders::PickleDbListExtender;
-use crate::iterators::{PickleDbIterator, PickleDbListItemIterator, PickleDbListIterator};
+use crate::iterators::{PickleDbIterator, PickleDbListItemIterator};
 use crate::serialization::SerializationMethod;
 use crate::serialization::Serializer;
 
@@ -1033,10 +1033,29 @@ impl PickleDb {
     /// }
     /// ```
     ///
-    pub fn liter(&self) -> PickleDbListIterator {
+    #[cfg(not(feature = "deprecated"))]
+    pub fn liter(&self) -> iterators::PickleDbListIterator {
         PickleDbListIterator {
             list_iter: self.list_map.iter(),
             serializer: &self.serializer,
+        }
+    }
+
+    /// Return an iterator over the items in certain list.
+    ///
+    /// # Deprecation
+    /// Deprecated since 0.5.2. This will be removed in a future version. Please use
+    /// `Db::liter_get` instead.
+    #[cfg(feature = "deprecated")]
+    #[deprecated(since = "0.5.2", note = "Please switch to `Db::liter_get`")]
+    pub fn liter<'a>(&'a self, name: &'a str) -> PickleDbListItemIterator<'a> {
+        match self.list_map.get(name) {
+            Some(list) => PickleDbListItemIterator {
+                name,
+                list_item_iter: list.iter(),
+                serializer: &self.serializer,
+            },
+            None => panic!("List '{}' doesn't exist", name),
         }
     }
 

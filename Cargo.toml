@@ -1,6 +1,6 @@
 [package]
 name = "pickledb"
-version = "0.5.1"
+version = "0.5.2"
 authors = ["seladb <pcapplusplus@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -30,11 +30,13 @@ matches = "0.1"
 fs2 = "0.4"
 
 [features]
-default = ["json"]
+default = ["json", "deprecated"]
 json = ["dep:serde_json"]
 bincode = ["dep:bincode"]
 yaml = ["dep:serde_yaml"]
 cbor = ["dep:serde_cbor"]
+# By default use the old iterators
+deprecated = []
 
 [[example]]
 name = "hello_world"
