@@ -1047,7 +1047,7 @@ impl PickleDb {
     /// Deprecated since 0.5.2. This will be removed in a future version. Please use
     /// `Db::liter_get` instead.
     #[cfg(feature = "deprecated")]
-    #[deprecated(since = "0.5.2", note = "Please switch to `Db::liter_get`")]
+    #[deprecated(since = "0.5.2", note = "Please switch to `pickledb::PickleDb::liter_get`")]
     pub fn liter<'a>(&'a self, name: &'a str) -> PickleDbListItemIterator<'a> {
         match self.list_map.get(name) {
             Some(list) => PickleDbListItemIterator {
