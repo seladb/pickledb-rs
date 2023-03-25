@@ -107,7 +107,7 @@ fn main() {
     db.lcreate("list2").unwrap().lextend(&[1, 2, 3, 4]);
 
     // iterate over the items in list2
-    for item_iter in db.liter("list2") {
+    for item_iter in db.liter_get("list2") {
         println!("Current item is: {}", item_iter.get_item::<i32>().unwrap());
     }
 }

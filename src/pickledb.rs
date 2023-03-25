@@ -6,7 +6,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use crate::error::{Error, ErrorCode, Result};
 use crate::extenders::PickleDbListExtender;
-use crate::iterators::{PickleDbIterator, PickleDbListIterator};
+use crate::iterators::{PickleDbIterator, PickleDbListItemIterator};
 use crate::serialization::SerializationMethod;
 use crate::serialization::Serializer;
 
@@ -1013,6 +1013,48 @@ impl PickleDb {
         }
     }
 
+    /// Return an iterator over the lists in the DB.
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # let mut db = pickledb::PickleDb::new_bin("1.db", pickledb::PickleDbDumpPolicy::AutoDump);
+    ///
+    /// // create a new list
+    /// db.lcreate("list1").unwrap()
+    ///   .lextend(&vec![1,2,3,4]);
+    ///
+    /// for list in db.liter() {
+    ///     println!("Iterating over list: {:?}", list.name());
+    ///     for item in list {
+    ///         println!("Current item is: {}", item.get_item::<i32>().unwrap());
+    ///     }
+    /// }
+    /// ```
+    ///
+    #[cfg(feature = "list-iterator")]
+    pub fn liter(&self) -> crate::iterators::PickleDbListIterator {
+        crate::iterators::PickleDbListIterator {
+            list_iter: self.list_map.iter(),
+            serializer: &self.serializer,
+        }
+    }
+
+    /// Return an iterator over the items in certain list.
+    ///
+    /// # Deprecation
+    /// Deprecated since 0.5.2. This will be removed in a future version. Please use
+    /// `Db::liter_get` instead.
+    #[cfg(not(feature = "list-iterator"))]
+    #[deprecated(
+        since = "0.5.2",
+        note = "Please switch to `pickledb::PickleDb::liter_get`"
+    )]
+    pub fn liter<'a>(&'a self, name: &str) -> PickleDbListItemIterator<'a> {
+        self.liter_get(name)
+    }
+
     /// Return an iterator over the items in certain list.
     ///
     /// # Arguments
@@ -1028,15 +1070,16 @@ impl PickleDb {
     ///   .lextend(&vec![1,2,3,4]);
     ///
     /// // iterate over the items in list1
-    /// for item_iter in db.liter("list1") {
+    /// for item_iter in db.liter_get("list1") {
     ///     println!("Current item is: {}", item_iter.get_item::<i32>().unwrap());
     /// }
     /// ```
     ///
-    pub fn liter(&self, name: &str) -> PickleDbListIterator {
-        match self.list_map.get(name) {
-            Some(list) => PickleDbListIterator {
-                list_iter: list.iter(),
+    pub fn liter_get<'a>(&'a self, name: &str) -> PickleDbListItemIterator<'a> {
+        match self.list_map.get_key_value(name) {
+            Some((key, list)) => PickleDbListItemIterator {
+                name: key,
+                list_item_iter: list.iter(),
                 serializer: &self.serializer,
             },
             None => panic!("List '{}' doesn't exist", name),

@@ -568,8 +568,8 @@ fn list_with_special_strings(ser_method_int: i32) {
 }
 
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
-fn list_iter_test(ser_method_int: i32) {
-    test_setup!("list_iter_test", ser_method_int, db_name);
+fn list_iter_item_test(ser_method_int: i32) {
+    test_setup!("list_iter_item_test", ser_method_int, db_name);
 
     // create a db with auto_dump == true
     let mut db = PickleDb::new(
@@ -598,7 +598,7 @@ fn list_iter_test(ser_method_int: i32) {
     let mut index = 0;
 
     // iterate over the list
-    for item in db.liter("list1") {
+    for item in db.liter_get("list1") {
         // check each item
         match index {
             0 => assert_eq!(item.get_item::<i32>().unwrap(), values.0),
@@ -613,6 +613,62 @@ fn list_iter_test(ser_method_int: i32) {
 
     // verify iterator went over all the items
     assert_eq!(index, 5);
+}
+
+#[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
+#[cfg(feature = "list-iterator")]
+fn list_iter_test(ser_method_int: i32) {
+    test_setup!("list_iter_test", ser_method_int, db_name);
+
+    // create a db with auto_dump == true
+    let mut db = PickleDb::new(
+        &db_name,
+        PickleDbDumpPolicy::AutoDump,
+        ser_method!(ser_method_int),
+    );
+
+    let values = (
+        1,
+        1.1,
+        String::from("value"),
+        vec![1, 2, 3],
+        ('a', 'b', 'c'),
+    );
+
+    // Create 5 identical lists
+    for i in 0..5 {
+        let name = format!("list{}", i);
+        db.lcreate(&name)
+            .unwrap()
+            .ladd(&values.0)
+            .ladd(&values.1)
+            .ladd(&values.2)
+            .ladd(&values.3)
+            .ladd(&values.4);
+    }
+
+    // Iterate and verify them all
+    for list in db.liter() {
+        // Reset the index
+        let mut index = 0;
+
+        // iterate over the list
+        for item in list {
+            // check each item
+            match index {
+                0 => assert_eq!(item.get_item::<i32>().unwrap(), values.0),
+                1 => assert_eq!(item.get_item::<f32>().unwrap(), values.1),
+                2 => assert_eq!(item.get_item::<String>().unwrap(), values.2),
+                3 => assert_eq!(item.get_item::<Vec<i32>>().unwrap(), values.3),
+                4 => assert_eq!(item.get_item::<(char, char, char)>().unwrap(), values.4),
+                _ => panic!(),
+            }
+            index += 1;
+        }
+
+        // verify iterator went over all the items
+        assert_eq!(index, 5);
+    }
 }
 
 #[allow(unused_attributes)]
@@ -646,5 +702,5 @@ fn list_doesnt_exist_iter_test(ser_method_int: i32) {
         .ladd(&values.4);
 
     // iterate over a non-existent list - should panic here
-    for _item in db.liter("list2") {}
+    for _item in db.liter_get("list2") {}
 }

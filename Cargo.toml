@@ -1,6 +1,6 @@
 [package]
 name = "pickledb"
-version = "0.5.1"
+version = "0.5.2"
 authors = ["seladb <pcapplusplus@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -35,6 +35,10 @@ json = ["dep:serde_json"]
 bincode = ["dep:bincode"]
 yaml = ["dep:serde_yaml"]
 cbor = ["dep:serde_cbor"]
+# By default use the old iterators until the old liter()
+# method is fully removed in a future version. For now the
+# newer version will be opt-in.
+list-iterator = []
 
 [[example]]
 name = "hello_world"
