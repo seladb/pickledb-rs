@@ -1033,9 +1033,9 @@ impl PickleDb {
     /// }
     /// ```
     ///
-    #[cfg(not(feature = "deprecated"))]
-    pub fn liter(&self) -> iterators::PickleDbListIterator {
-        PickleDbListIterator {
+    #[cfg(feature = "list-iterator")]
+    pub fn liter(&self) -> crate::iterators::PickleDbListIterator {
+        crate::iterators::PickleDbListIterator {
             list_iter: self.list_map.iter(),
             serializer: &self.serializer,
         }
@@ -1046,7 +1046,7 @@ impl PickleDb {
     /// # Deprecation
     /// Deprecated since 0.5.2. This will be removed in a future version. Please use
     /// `Db::liter_get` instead.
-    #[cfg(feature = "deprecated")]
+    #[cfg(not(feature = "list-iterator"))]
     #[deprecated(
         since = "0.5.2",
         note = "Please switch to `pickledb::PickleDb::liter_get`"

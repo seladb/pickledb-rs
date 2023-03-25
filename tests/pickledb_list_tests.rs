@@ -616,7 +616,7 @@ fn list_iter_item_test(ser_method_int: i32) {
 }
 
 #[rstest_parametrize(ser_method_int, case(0), case(1), case(2), case(3))]
-#[cfg(not(feature = "deprecated"))]
+#[cfg(feature = "list-iterator")]
 fn list_iter_test(ser_method_int: i32) {
     test_setup!("list_iter_test", ser_method_int, db_name);
 
