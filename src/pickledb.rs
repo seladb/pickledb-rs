@@ -1,6 +1,7 @@
 use serde::{de::DeserializeOwned, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -379,14 +380,17 @@ impl PickleDb {
                         .as_secs()
                 );
 
-                match fs::write(&temp_file_path, ser_db) {
-                    Ok(_) => (),
-                    Err(err) => return Err(Error::new(ErrorCode::Io(err))),
-                }
+                let res = (|| {
+                    let mut f = fs::File::create(&temp_file_path)?;
+                    f.write_all(&ser_db)?;
+                    f.sync_all()?;
+                    drop(f);
+                    fs::rename(temp_file_path, &self.db_file_path)?;
+                    Ok(())
+                })();
 
-                match fs::rename(temp_file_path, &self.db_file_path) {
-                    Ok(_) => (),
-                    Err(err) => return Err(Error::new(ErrorCode::Io(err))),
+                if let Err(err) = res {
+                    return Err(Error::new(ErrorCode::Io(err)));
                 }
 
                 if let PickleDbDumpPolicy::PeriodicDump(_dur) = self.dump_policy {
